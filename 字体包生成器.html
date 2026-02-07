@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>广式半条龙🐲-BMFont Editor Pro V8 Turbo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --sidebar-bg: #1e1e1e;
+            --panel-bg: #252526;
+            --primary: #00f3ff;
+            --accent: #ff0055;
+            --text-main: #e0e0e0;
+            --text-dim: #858585;
+            --input-bg: #1e1e1e;
+            --border-color: #3e3e3e;
+            --font-ui: 'Segoe UI', 'Roboto', sans-serif;
+            --font-mono: 'Consolas', monospace;
+        }
+
+        body {
+            margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-main);
+            font-family: var(--font-ui); height: 100vh; overflow: hidden; display: flex;
+        }
+
+        /* === 1. Sidebar (Left Panel) === */
+        .sidebar {
+            width: 300px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid #000;
+            display: flex; flex-direction: column;
+            padding: 20px; box-sizing: border-box;
+            overflow-y: auto; z-index: 20;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+        }
+
+        .sidebar-section { margin-bottom: 25px; }
+        .sidebar-title {
+            font-size: 14px; font-weight: 600; color: var(--primary);
+            margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        .control-row {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 12px; font-size: 14px;
+        }
+        .control-row label { color: var(--text-main); width: 80px; }
+        .control-input-group { display: flex; align-items: center; width: 140px; }
+        
+        input[type="number"], input[type="text"] {
+            width: 100%; background: transparent; border: none;
+            border-bottom: 1px solid var(--text-dim);
+            color: #fff; text-align: right; padding: 6px;
+            font-family: var(--font-mono); font-size: 14px;
+            transition: 0.3s;
+        }
+        input[type="number"]:focus, input[type="text"]:focus {
+            outline: none; border-bottom-color: var(--primary);
+        }
+        .unit { margin-left: 8px; color: var(--text-dim); font-size: 14px; width: 20px; }
+
+        .info-text {
+            font-size: 12px;
+            color: #ff9900;
+            margin-top: 8px;
+            padding: 6px;
+            background: rgba(0,0,0,0.3);
+            border-left: 2px solid #ff9900;
+            border-radius: 2px;
+            line-height: 1.3;
+        }
+
+        .checkbox-row { display: flex; align-items: center; margin-bottom: 10px; cursor: pointer; }
+        .checkbox-row input { margin-right: 10px; accent-color: var(--primary); }
+
+        /* === 2. Main Content (Right Panel) === */
+        .main-content {
+            flex: 1; display: flex; flex-direction: column;
+            position: relative; background: radial-gradient(circle at center, #1a1a20 0%, #000 100%);
+        }
+
+        /* Header */
+        .header {
+            height: 60px; border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 30px; background: rgba(30,30,30,0.8); backdrop-filter: blur(10px);
+            flex-shrink: 0;
+        }
+        .app-title { font-weight: 700; font-size: 18px; color: var(--primary); letter-spacing: 1px; }
+
+        .btn-download {
+            background: var(--primary); color: #000; border: none;
+            padding: 8px 20px; font-weight: bold; border-radius: 2px;
+            cursor: pointer; text-transform: uppercase; font-size: 12px;
+            transition: 0.2s; display: flex; align-items: center; gap: 8px;
+        }
+        .btn-download:hover { background: #fff; box-shadow: 0 0 15px var(--primary); }
+        .btn-download:disabled { background: #333; color: #555; cursor: not-allowed; box-shadow: none; }
+
+        /* Scrollable Work Area */
+        .work-area {
+            flex: 1; padding: 30px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 20px;
+        }
+
+        /* Section Styling */
+        .panel-section {
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .section-header {
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .section-label { font-size: 12px; font-weight: bold; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+        .section-info { font-size: 11px; color: var(--primary); font-family: var(--font-mono); }
+
+        /* Upload Zone */
+        .upload-zone {
+            border: 2px dashed var(--border-color); border-radius: 8px;
+            padding: 15px; text-align: center; color: var(--text-dim);
+            transition: 0.3s; background: rgba(0,0,0,0.2);
+            display: flex; justify-content: space-around; flex-wrap: wrap;
+        }
+        .upload-zone:hover { border-color: var(--primary); color: var(--text-main); }
+        .file-input-wrapper { text-align: left; }
+        .file-label { font-size: 11px; display: block; margin-bottom: 5px; color: var(--primary); }
+        input[type="file"] {
+            font-size: 12px;
+            color: #aaa;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 5px;
+        }
+        input[type="file"]::-webkit-file-upload-button {
+            background: var(--primary);
+            color: #000;
+            border: none;
+            padding: 6px 12px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 10px;
+            transition: 0.2s;
+            margin-right: 10px;
+        }
+        input[type="file"]::-webkit-file-upload-button:hover {
+            background: #fff;
+            box-shadow: 0 0 10px var(--primary);
+        }
+        .input-hint {
+            font-size: 10px;
+            color: #ff9900;
+            display: block;
+            margin-top: 4px;
+            padding-left: 12px;
+            position: relative;
+        }
+        .input-hint::before {
+            content: "|";
+            position: absolute;
+            left: 0;
+            color: #ff9900;
+            font-weight: bold;
+        }
+
+        /* Preview Containers */
+        .preview-container {
+            background: #111; border: 1px solid #333;
+            display: flex; justify-content: center; align-items: flex-start;
+            position: relative; overflow: auto;
+            /* Checkerboard pattern */
+            background-image: linear-gradient(45deg, #1a1a1a 25%, transparent 25%), linear-gradient(-45deg, #1a1a1a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1a1a1a 75%), linear-gradient(-45deg, transparent 75%, #1a1a1a 75%);
+            background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        .atlas-preview { padding: 10px; overflow: auto; display: flex; align-items: center; justify-content: center; }
+        .atlas-preview canvas { max-width: 100%; max-height: 100%; width: 100%; height: 100%; object-fit: contain; }
+        .demo-preview { padding: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .demo-preview canvas { max-width: 100%; max-height: 100%; width: 100%; height: 100%; object-fit: contain; }
+
+        canvas { 
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); 
+            max-width: 100%; 
+            max-height: 100%;
+            width: 100%; 
+            height: 100%;
+            object-fit: contain;
+            display: block; 
+        }
+
+        textarea {
+            width: 100%; height: 60px; background: #000; border: 1px solid var(--border-color);
+            color: var(--primary); padding: 10px; font-family: var(--font-mono); font-size: 14px;
+            box-sizing: border-box; resize: vertical; margin-top: 5px;
+        }
+
+        /* Scanlines */
+        .scanlines {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+            background-size: 100% 4px; z-index: 999;
+        }
+
+        /* === Help Modal === */
+        .help-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .help-modal.show {
+            display: flex;
+        }
+
+        .help-content {
+            background: var(--panel-bg);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            padding: 30px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.3);
+        }
+
+        .help-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .help-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .help-close {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 24px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .help-close:hover {
+            color: var(--primary);
+        }
+
+        .help-section {
+            margin-bottom: 25px;
+        }
+
+        .help-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .help-section p {
+            font-size: 14px;
+            color: var(--text-main);
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+
+        .help-section ul {
+            font-size: 14px;
+            color: var(--text-main);
+            line-height: 1.5;
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+
+        .help-section li {
+            margin-bottom: 5px;
+        }
+
+        .help-section code {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+        }
+
+        /* === Help Button === */
+        .btn-help {
+            width: 100%;
+            background: var(--primary);
+            color: #000;
+            border: none;
+            padding: 10px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 12px;
+            transition: 0.2s;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-help:hover {
+            background: #fff;
+            box-shadow: 0 0 15px var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+<div class="scanlines"></div>
+
+<!-- Left Sidebar: Parameters -->
+<aside class="sidebar">
+    <div style="margin-bottom: 30px; border-bottom: 1px solid #333333; padding-bottom: 10px;">
+        <span style="color:#fff; font-weight:bold;">设置</span>
+    </div>
+
+    <!-- Metrics -->
+    <div class="sidebar-section">
+        <div class="sidebar-title">字体度量</div>
+        <div class="control-row"><label>字体大小</label><div class="control-input-group"><input type="number" id="inpFontSize" value="32"><span class="unit">px</span></div></div>
+        <div class="control-row"><label>行高</label><div class="control-input-group"><input type="number" id="inpLineHeight" value="32"><span class="unit">px</span></div></div>
+        <div class="info-text" id="textureHeightInfo">提示: 导入字体贴图的高度将决定字体大小的参考值</div>
+    </div>
+
+    <!-- Layout -->
+    <div class="sidebar-section">
+        <div class="sidebar-title">布局</div>
+        <div class="control-row"><label>内边距</label><div class="control-input-group"><input type="number" id="inpPadding" value="1"><span class="unit">px</span></div></div>
+        <div class="control-row"><label>间距</label><div class="control-input-group"><input type="number" id="inpSpacing" value="1"><span class="unit">px</span></div></div>
+    </div>
+
+    <!-- Packing -->
+    <div class="sidebar-section">
+        <div class="sidebar-title">纹理打包</div>
+        <label class="checkbox-row"><input type="checkbox" id="chkFixedSize"><span>固定图集大小</span></label>
+        <div class="control-row" id="sizeInputs">
+            <label>图集尺寸</label>
+            <div class="control-input-group">
+                <input type="number" id="inpMaxWidth" value="512" disabled><span class="unit">x</span>
+                <input type="number" id="inpMaxHeight" value="512" disabled><span class="unit">px</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Button -->
+    <div class="sidebar-section" style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border-color);">
+        <button id="btnHelp" class="btn-help">使用帮助</button>
+    </div>
+</aside>
+
+<!-- Right Main Content -->
+<main class="main-content">
+    <!-- Header -->
+    <div class="header">
+        <div class="app-title">广式半条龙🐲-BMFont Editor Pro V8 Turbo<span style="font-size:12px; opacity:0.5; margin-left:10px;">// 专业版</span></div>
+        <div style="display:flex; gap:10px;">
+            <input type="text" id="outName" value="my_font" style="width:120px; text-align:left;" placeholder="文件名">
+            <button id="btnDownload" class="btn-download" disabled>下载 ZIP</button>
+        </div>
+    </div>
+
+    <!-- Work Area -->
+    <div class="work-area">
+        
+        <!-- 1. Uploads -->
+        <div class="panel-section">
+            <div class="section-label">输入文件</div>
+            <div class="upload-zone">
+                <div class="file-input-wrapper">
+                    <span class="file-label">1. 导入 FNT (可选)</span>
+                    <input type="file" id="fntFile" accept=".fnt,.txt">
+                    <span class="input-hint">用于解析现有的字体文件</span>
+                </div>
+                <div class="file-input-wrapper">
+                    <span class="file-label">2. 原始图集 (可选)</span>
+                    <input type="file" id="imgFile" accept=".png,.jpg">
+                    <span class="input-hint">需与 FNT 文件配套使用</span>
+                </div>
+                <div class="file-input-wrapper">
+                    <span class="file-label" style="color:var(--primary); font-weight:bold;">3. 上传新字符（图片命名查看使用帮助）</span>
+                    <input type="file" id="newCharsFile" accept=".png" multiple>
+                    <span class="input-hint">选择多个字符图片文件（1、2不选就是新建字体）</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 字符编辑器 -->
+        <div class="panel-section" id="charEditorSection" style="display: none;">
+            <div class="section-header">
+                <div class="section-label">📝 字符编辑器</div>
+                <button id="btnExpandCharEditor" style="background:none;border:1px solid #333;color:#aaa;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;">展开编辑 ▼</button>
+            </div>
+            <div id="charEditorPanel" style="display:none;background:#151515;border:1px solid #333;border-radius:8px;padding:15px;max-height:300px;overflow-y:auto;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;padding-bottom:10px;border-bottom:1px solid #333;">
+                    <div style="font-size:12px;color:#888;">共 <span id="charCount" style="color:#00f3ff;">0</span> 个字符</div>
+                    <button id="btnDeleteAllChars" style="background:#ff0055;border:none;padding:6px 12px;border-radius:4px;color:#fff;font-size:11px;cursor:pointer;">清空全部</button>
+                </div>
+                <div id="charListContainer" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;"></div>
+            </div>
+        </div>
+
+        <!-- 纹理图集 & 实时演示 -->
+        <div style="display: flex; gap: 20px; flex: 1; min-height: 0;">
+            <!-- Atlas Preview -->
+            <div class="panel-section" style="flex: 1; min-width: 0;">
+                <div class="section-header">
+                    <div class="section-label">纹理图集</div>
+                    <div id="atlasInfo" class="section-info">等待输入...</div>
+                </div>
+                <div class="preview-container atlas-preview">
+                    <canvas id="resultCanvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Demo -->
+            <div class="panel-section" style="flex: 1; min-width: 0;">
+                <div class="section-header">
+                    <div class="section-label">实时演示</div>
+                    <div id="statusLog" class="section-info" style="color:var(--accent);">就绪</div>
+                </div>
+                <div class="preview-container demo-preview">
+                    <canvas id="demoCanvas"></canvas>
+                </div>
+                <textarea id="demoText" placeholder="在此输入文字测试您的字体...\n\n支持：\n• 中文、日文、韩文\n• 表情符号\n• 标点符号\n• 数字和字母\n• 特殊符号" style="height: 80px;">Hello World 123</textarea>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<!-- Help Modal -->
+<div class="help-modal" id="helpModal">
+    <div class="help-content">
+        <div class="help-header">
+            <div class="help-title">使用帮助</div>
+            <button class="help-close" id="helpClose">&times;</button>
+        </div>
+        <div class="help-body">
+            <div class="help-section">
+                <h3>快速开始</h3>
+                <p>BMFONT 编辑器是一个专业的字体纹理打包工具，用于将单个字符图片打包成纹理图集并生成对应的 FNT 文件。</p>
+                <p><strong>最简单的使用方法：</strong></p>
+                <ul>
+                    <li>点击 <code>3. 上传新字符</code> 选择多个字符图片</li>
+                    <li>系统会自动处理并生成纹理图集</li>
+                    <li>在 <code>实时演示</code> 区域测试字体效果</li>
+                    <li>点击 <code>下载 ZIP</code> 获取完整字体包</li>
+                </ul>
+            </div>
+            
+            <div class="help-section">
+                <h3>输入文件</h3>
+                <p><strong>1. 导入 FNT (可选)</strong></p>
+                <p>导入现有的 FNT 文件，用于解析字符信息。如果您有完整的字体包，可以从这里开始。</p>
+                
+                <p><strong>2. 原始图集 (可选)</strong></p>
+                <p>如果您导入了 FNT 文件，还需要导入对应的原始图集图片，系统会从图集中切割出每个字符。</p>
+                
+                <p><strong>3. 上传新字符</strong></p>
+                <p>直接上传单个字符的图片文件，这是最常用的功能。系统会自动：</p>
+                <ul>
+                    <li>根据文件名解析字符编码</li>
+                    <li>计算合适的纹理图集大小</li>
+                    <li>生成完整的 FNT 文件</li>
+                </ul>
+            </div>
+            
+            <div class="help-section">
+                <h3>字体度量</h3>
+                <p><strong>字体大小</strong></p>
+                <p>设置字体的大小，系统会根据导入的字符图片高度自动调整此值。</p>
+                
+                <p><strong>行高</strong></p>
+                <p>设置文本的行高，控制每行文字之间的垂直间距。</p>
+            </div>
+            
+            <div class="help-section">
+                <h3>布局</h3>
+                <p><strong>内边距</strong></p>
+                <p>设置字符与图集边缘之间的间距，单位为像素。</p>
+                
+                <p><strong>间距</strong></p>
+                <p>设置字符之间的间距，单位为像素。</p>
+            </div>
+            
+            <div class="help-section">
+                <h3>纹理打包</h3>
+                <p><strong>固定图集大小</strong></p>
+                <p>勾选此选项可以手动设置纹理图集的尺寸，否则系统会自动计算合适的大小（按 2 的幂次递增）。</p>
+                
+                <p><strong>图集尺寸</strong></p>
+                <p>当勾选了固定图集大小时，可以手动设置图集的宽度和高度。</p>
+            </div>
+            
+            <div class="help-section">
+                <h3>预览和测试</h3>
+                <p><strong>纹理图集</strong></p>
+                <p>显示生成的纹理图集，系统会自动将所有字符打包成一张图片。</p>
+                
+                <p><strong>实时演示</strong></p>
+                <p>在文本框中输入文字，可以实时预览字体效果，支持：</p>
+                <ul>
+                    <li>中文、日文、韩文</li>
+                    <li>表情符号</li>
+                    <li>标点符号</li>
+                    <li>数字和字母</li>
+                    <li>特殊符号</li>
+                </ul>
+            </div>
+            
+            <div class="help-section">
+                <h3>下载字体包</h3>
+                <p>所有设置完成后，点击 <code>下载 ZIP</code> 按钮获取完整的字体包，包含：</p>
+                <ul>
+                    <li><code>xxx.fnt</code> - 字体描述文件</li>
+                    <li><code>xxx.png</code> - 纹理图集</li>
+                </ul>
+                <p>这个字体包可以直接用于游戏引擎、网页等项目中。</p>
+            </div>
+            
+            <div class="help-section">
+                <h3>文件名规则</h3>
+                <p>上传字符图片时，系统会根据文件名解析字符编码：</p>
+                <ul>
+                    <li><code>a.png</code> - 对应字符 'a'</li>
+                    <li><code>1.png</code> - 对应字符 '1'</li>
+                    <li><code>dot.png</code> - 对应字符 '.'</li>
+                    <li><code>exclaim.png</code> - 对应字符 '!'</li>
+                    <li><code>123.png</code> - 使用数字 123 作为字符 ID</li>
+                </ul>
+                
+                <p><strong>支持的标点符号文件名详细列表：</strong></p>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; margin: 10px 0;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <th style="text-align: left; padding: 8px; color: var(--primary);">文件名</th>
+                                <th style="text-align: left; padding: 8px; color: var(--primary);">对应字符</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>dot.png</code></td>
+                                <td style="padding: 6px;">句号 (.)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>comma.png</code></td>
+                                <td style="padding: 6px;">逗号 (,)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>exclaim.png</code></td>
+                                <td style="padding: 6px;">感叹号 (!)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>question.png</code></td>
+                                <td style="padding: 6px;">问号 (?)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>colon.png</code></td>
+                                <td style="padding: 6px;">冒号 (:)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>semicolon.png</code></td>
+                                <td style="padding: 6px;">分号 (;)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>quote.png</code></td>
+                                <td style="padding: 6px;">双引号 (")</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>singlequote.png</code></td>
+                                <td style="padding: 6px;">单引号 (')</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>leftparen.png</code></td>
+                                <td style="padding: 6px;">左括号 (()</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>rightparen.png</code></td>
+                                <td style="padding: 6px;">右括号 ())</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>leftbracket.png</code></td>
+                                <td style="padding: 6px;">左方括号 ([)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>rightbracket.png</code></td>
+                                <td style="padding: 6px;">右方括号 (])</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>leftbrace.png</code></td>
+                                <td style="padding: 6px;">左花括号 ({)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>rightbrace.png</code></td>
+                                <td style="padding: 6px;">右花括号 (})</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>dash.png</code></td>
+                                <td style="padding: 6px;">短横线 (-)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>underscore.png</code></td>
+                                <td style="padding: 6px;">下划线 (_)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>slash.png</code></td>
+                                <td style="padding: 6px;">斜杠 (/)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>backslash.png</code></td>
+                                <td style="padding: 6px;">反斜杠 (\)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>pipe.png</code></td>
+                                <td style="padding: 6px;">竖线 (|)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>asterisk.png</code></td>
+                                <td style="padding: 6px;">星号 (*)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>plus.png</code></td>
+                                <td style="padding: 6px;">加号 (+)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>minus.png</code></td>
+                                <td style="padding: 6px;">减号 (-)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>equal.png</code></td>
+                                <td style="padding: 6px;">等号 (=)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>at.png</code></td>
+                                <td style="padding: 6px;">@符号 (@)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>hash.png</code></td>
+                                <td style="padding: 6px;">井号 (#)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>dollar.png</code></td>
+                                <td style="padding: 6px;">美元符号 ($)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>percent.png</code></td>
+                                <td style="padding: 6px;">百分号 (%)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>caret.png</code></td>
+                                <td style="padding: 6px;">脱字符 (^)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>ampersand.png</code></td>
+                                <td style="padding: 6px;">和号 (&)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>tilde.png</code></td>
+                                <td style="padding: 6px;">波浪号 (~)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>grave.png</code></td>
+                                <td style="padding: 6px;">重音符号 (`)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>backtick.png</code></td>
+                                <td style="padding: 6px;">反引号 (`)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <td style="padding: 6px;"><code>less.png</code></td>
+                                <td style="padding: 6px;">小于号 (&lt;)</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px;"><code>greater.png</code></td>
+                                <td style="padding: 6px;">大于号 (&gt;)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <h3>界面图例</h3>
+                <p>下图展示了 BMFONT 编辑器的主要界面元素：</p>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin: 10px 0;">
+                    <div style="font-weight: bold; color: var(--primary); margin-bottom: 10px;">左侧设置面板</div>
+                    <ul>
+                        <li><span style="color: var(--primary);">字体度量</span> - 字体大小和行高设置</li>
+                        <li><span style="color: var(--primary);">布局</span> - 内边距和间距调整</li>
+                        <li><span style="color: var(--primary);">纹理打包</span> - 图集尺寸设置</li>
+                        <li><span style="color: var(--primary);">使用帮助</span> - 打开此帮助文档</li>
+                    </ul>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin: 10px 0;">
+                    <div style="font-weight: bold; color: var(--primary); margin-bottom: 10px;">右侧工作区</div>
+                    <ul>
+                        <li><span style="color: var(--primary);">输入文件</span> - 上传 FNT、图集和字符</li>
+                        <li><span style="color: var(--primary);">纹理图集</span> - 生成的图集预览</li>
+                        <li><span style="color: var(--primary);">实时演示</span> - 测试字体效果</li>
+                        <li><span style="color: var(--primary);">下载 ZIP</span> - 获取字体包</li>
+                    </ul>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin: 10px 0;">
+                    <div style="font-weight: bold; color: var(--primary); margin-bottom: 10px;">状态指示器</div>
+                    <ul>
+                        <li><span style="color: var(--primary);">就绪</span> - 系统准备就绪</li>
+                        <li><span style="color: var(--accent);">处理中</span> - 正在生成图集</li>
+                        <li><span style="color: #00ff00;">完成</span> - 图集生成完成</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // === Core State ===
+    let charList = [];
+    let originalImage = null;
+    let isFntImported = false;
+    let finalFntString = "";
+    
+    // UI Elements
+    const els = {
+        fnt: document.getElementById('fntFile'),
+        img: document.getElementById('imgFile'),
+        newChars: document.getElementById('newCharsFile'),
+        demoText: document.getElementById('demoText'),
+        status: document.getElementById('statusLog'),
+        atlasInfo: document.getElementById('atlasInfo'),
+        btnDownload: document.getElementById('btnDownload'),
+        btnHelp: document.getElementById('btnHelp'),
+        resultCanvas: document.getElementById('resultCanvas'),
+        demoCanvas: document.getElementById('demoCanvas'),
+        // Inputs
+        fontSize: document.getElementById('inpFontSize'),
+        lineHeight: document.getElementById('inpLineHeight'),
+        padding: document.getElementById('inpPadding'),
+        spacing: document.getElementById('inpSpacing'),
+        maxWidth: document.getElementById('inpMaxWidth'),
+        maxHeight: document.getElementById('inpMaxHeight'),
+        outName: document.getElementById('outName')
+    };
+
+    const ctxResult = els.resultCanvas.getContext('2d');
+    const ctxDemo = els.demoCanvas.getContext('2d');
+
+    // 固定/自动图集大小切换
+    const chkFixedSize = document.getElementById('chkFixedSize');
+    const inpMaxWidth = document.getElementById('inpMaxWidth');
+    const inpMaxHeight = document.getElementById('inpMaxHeight');
+    
+    chkFixedSize.addEventListener('change', () => {
+        const isFixed = chkFixedSize.checked;
+        inpMaxWidth.disabled = !isFixed;
+        inpMaxHeight.disabled = !isFixed;
+        rebuildAndRender();
+    });
+
+    // === Event Listeners ===
+    [els.fontSize, els.lineHeight, els.padding, els.spacing, 
+     els.maxWidth, els.maxHeight].forEach(el => {
+        el.addEventListener('input', () => {
+            rebuildAndRender();
+        });
+    });
+
+    els.demoText.addEventListener('input', runDemo);
+
+    // === 字符编辑器功能 ===
+    const charEditorSection = document.getElementById('charEditorSection');
+    const charEditorPanel = document.getElementById('charEditorPanel');
+    const btnExpandCharEditor = document.getElementById('btnExpandCharEditor');
+    const charListContainer = document.getElementById('charListContainer');
+    const charCount = document.getElementById('charCount');
+    const btnDeleteAllChars = document.getElementById('btnDeleteAllChars');
+    let isCharEditorExpanded = false;
+    
+    btnExpandCharEditor.addEventListener('click', () => {
+        isCharEditorExpanded = !isCharEditorExpanded;
+        charEditorPanel.style.display = isCharEditorExpanded ? 'block' : 'none';
+        btnExpandCharEditor.textContent = isCharEditorExpanded ? '收起编辑 ▲' : '展开编辑 ▼';
+        if (isCharEditorExpanded) renderCharEditor();
+    });
+    
+    btnDeleteAllChars.addEventListener('click', () => {
+        if (charList.length === 0) return;
+        if (confirm('确定要清空全部 ' + charList.length + ' 个字符吗？')) {
+            charList = [];
+            rebuildAndRender();
+            updateCharEditorUI();
+        }
+    });
+    
+    function renderCharEditor() {
+        charCount.textContent = charList.length;
+        if (charList.length === 0) {
+            charListContainer.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#666;font-size:14px;">📭 暂无字符</div>';
+            return;
+        }
+        const sortedChars = [...charList].sort((a,b) => a.id - b.id);
+        charListContainer.innerHTML = sortedChars.map(c => {
+            const charStr = String.fromCodePoint(c.id);
+            const isPrintable = c.id >= 32 && c.id <= 126;
+            const displayName = isPrintable ? charStr : 'ID ' + c.id;
+            return '<div class="char-item" data-id="' + c.id + '" style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;display:flex;align-items:center;gap:10px;cursor:pointer;" onmouseover="this.style.borderColor=\'#00f3ff\'" onmouseout="this.style.borderColor=\'#333\'"><div style="width:40px;height:40px;background:#0a0a0a;border-radius:4px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img src="' + c.img.src + '" style="max-width:100%;max-height:100%;" onerror="this.parentElement.innerHTML=\'<span style=&quot;font-size:16px;color:#666;&quot;>' + (isPrintable ? charStr : '?') + '</span>\'"></div><div style="flex:1;min-width:0;"><div class="char-name-display" data-id="' + c.id + '" style="font-size:14px;color:#00f3ff;font-family:monospace;margin-bottom:4px;cursor:text;" title="点击修改">' + displayName + '</div><div style="font-size:11px;color:#666;">' + c.width + '×' + c.height + 'px</div></div><button class="btn-delete-char" data-id="' + c.id + '" style="background:transparent;border:none;color:#ff0055;cursor:pointer;padding:5px;font-size:16px;opacity:0.6;" title="删除">✕</button></div>';
+        }).join('');
+        
+        // 绑定名称点击事件（修改字符）
+        charListContainer.querySelectorAll('.char-name-display').forEach(el => {
+            el.addEventListener('click', () => {
+                editChar(parseInt(el.dataset.id));
+            });
+        });
+        
+        // 绑定删除按钮事件
+        charListContainer.querySelectorAll('.btn-delete-char').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                deleteChar(parseInt(btn.dataset.id));
+            });
+        });
+    }
+    
+    // 修改字符名称和ID
+    function editChar(oldId) {
+        const char = charList.find(c => c.id === oldId);
+        if (!char) return;
+        
+        const oldCharStr = String.fromCodePoint(oldId);
+        const dialog = document.createElement('div');
+        dialog.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:3000;display:flex;align-items:center;justify-content:center;';
+        
+        dialog.innerHTML = '<div style="background:#1e1e1e;border:2px solid #00f3ff;border-radius:12px;padding:30px;min-width:350px;box-shadow:0 0 40px rgba(0,243,255,0.4);"><h3 style="margin:0 0 20px;color:#00f3ff;font-size:18px;">修改字符</h3><p style="color:#888;font-size:13px;margin-bottom:15px;">当前: <code style="background:#333;padding:4px 8px;border-radius:4px;">' + oldCharStr + '</code> (ID: ' + oldId + ')</p><input type="text" id="charEditInput" style="width:100%;padding:12px;font-size:24px;text-align:center;background:#0a0a0a;border:1px solid #333;border-radius:8px;color:#fff;outline:none;margin-bottom:20px;font-family:monospace;" placeholder="输入新字符或ID" autofocus value="' + oldCharStr + '"><div style="display:flex;gap:10px;"><button id="btnCharEditConfirm" style="flex:1;padding:12px;background:#00f3ff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;">确认</button><button id="btnCharEditCancel" style="flex:1;padding:12px;background:#333;border:none;border-radius:8px;color:#aaa;cursor:pointer;">取消</button></div></div>';
+        
+        document.body.appendChild(dialog);
+        
+        const input = dialog.querySelector('#charEditInput');
+        const btnConfirm = dialog.querySelector('#btnCharEditConfirm');
+        const btnCancel = dialog.querySelector('#btnCharEditCancel');
+        
+        const close = (newId) => {
+            document.body.removeChild(dialog);
+            if (newId !== null && newId !== oldId) {
+                char.id = newId;
+                rebuildAndRender();
+                updateCharEditorUI();
+                updateStatus('已修改字符 ID: ' + oldId + ' → ' + newId);
+            }
+        };
+        
+        const getNewId = () => {
+            const val = input.value.trim();
+            if (!val) return null;
+            if (/^\d+$/.test(val)) return parseInt(val);
+            return val.codePointAt(0);
+        };
+        
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter') close(getNewId());
+        });
+        btnConfirm.addEventListener('click', () => close(getNewId()));
+        btnCancel.addEventListener('click', () => close(null));
+        
+        setTimeout(() => input.focus(), 100);
+    }
+    
+    function deleteChar(id) {
+        const charStr = String.fromCodePoint(id);
+        if (confirm('删除字符 "' + charStr + '" (ID: ' + id + ')？')) {
+            charList = charList.filter(c => c.id !== id);
+            rebuildAndRender();
+            updateCharEditorUI();
+        }
+    }
+    
+    function updateCharEditorUI() {
+        if (isCharEditorExpanded) renderCharEditor();
+        charCount.textContent = charList.length;
+        charEditorSection.style.display = charList.length > 0 ? 'flex' : 'none';
+    }
+
+    // === File Handlers ===
+    els.fnt.addEventListener('change', (e) => {
+        const f = e.target.files[0];
+        if(!f) return;
+        const r = new FileReader();
+        r.onload = (ev) => {
+            parseFnt(ev.target.result);
+            isFntImported = true;
+            updateStatus("FNT 文件已导入。");
+            cutOriginalChars();
+            rebuildAndRender();
+        };
+        r.readAsText(f);
+    });
+
+    els.img.addEventListener('change', (e) => {
+        const f = e.target.files[0];
+        if(!f) return;
+        const img = new Image();
+        img.onload = () => {
+            originalImage = img;
+            updateStatus("图集已加载。");
+            cutOriginalChars();
+            rebuildAndRender();
+        };
+        img.src = URL.createObjectURL(f);
+    });
+
+    els.newChars.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        if(!files.length) return;
+        
+        let processed = 0;
+        files.forEach(f => {
+            const name = f.name.split('.')[0];
+            let id;
+            
+            // 特殊处理常见标点符号的英文名称
+            const punctuationMap = {
+                'dot': 46,         // . 句号
+                'period': 46,      // . 句号
+                'fullstop': 46,    // . 句号
+                'comma': 44,       // , 逗号
+                'exclaim': 33,     // ! 感叹号
+                'exclamation': 33, // ! 感叹号
+                'bang': 33,        // ! 感叹号
+                'question': 63,    // ? 问号
+                'query': 63,       // ? 问号
+                'colon': 58,       // : 冒号
+                'semicolon': 59,   // ; 分号
+                'quote': 34,       // " 引号
+                'singlequote': 39,  // ' 单引号
+                'apostrophe': 39,  // ' 撇号
+                'leftparen': 40,   // ( 左括号
+                'rightparen': 41,  // ) 右括号
+                'leftbracket': 91, // [ 左方括号
+                'rightbracket': 93, // ] 右方括号
+                'leftbrace': 123,  // { 左大括号
+                'rightbrace': 125, // } 右大括号
+                'dash': 45,        // - 连字符
+                'hyphen': 45,      // - 连字符
+                'underscore': 95,   // _ 下划线
+                'slash': 47,        // / 斜杠
+                'backslash': 92,     // \ 反斜杠
+                'pipe': 124,        // | 管道符
+                'asterisk': 42,     // * 星号
+                'star': 42,         // * 星号
+                'plus': 43,         // + 加号
+                'minus': 45,        // - 减号
+                'equal': 61,        // = 等号
+                'at': 64,           // @ @符号
+                'hash': 35,         // # 井号
+                'sharp': 35,        // # 井号
+                'dollar': 36,       // $ 美元符号
+                'percent': 37,      // % 百分号
+                'caret': 94,        // ^ 脱字符
+                'ampersand': 38,     // & 和号
+                'and': 38,          // & 和号
+                'tilde': 126,        // ~ 波浪号
+                'grave': 96,        // ` 重音符
+                'backtick': 96,      // ` 反引号
+                'less': 60,         // < 小于号
+                'greater': 62,       // > 大于号
+                'lesser': 60,       // < 小于号
+                'greaterthan': 62,   // > 大于号
+            };
+            
+            // 检查是否是标点符号的英文名称
+            const lowerName = name.toLowerCase();
+            if (punctuationMap[lowerName]) {
+                id = punctuationMap[lowerName];
+            } else if (/^\d+$/.test(name)) {
+                // 检查是否是单个数字字符（如"0.png"对应字符'0'）
+                if (name.length === 1) {
+                    id = name.codePointAt(0);  // 使用字符编码
+                } else {
+                    id = parseInt(name);  // 使用数字作为自定义ID
+                }
+            } else {
+                id = name.codePointAt(0);  // 使用第一个字符的编码
+            }
+            
+            const img = new Image();
+            img.onload = () => {
+                const existing = charList.findIndex(c => c.id === id);
+                const charObj = {
+                    id: id, img: img, width: img.width, height: img.height,
+                    xoffset: 0, yoffset: 0, xadvance: img.width,
+                    page: 0, chnl: 15
+                };
+                
+                if(existing !== -1) {
+                    const old = charList[existing];
+                    charObj.xoffset = old.xoffset;
+                    charObj.yoffset = old.yoffset;
+                    charList[existing] = charObj;
+                } else {
+                    charList.push(charObj);
+                }
+
+                processed++;
+                
+                // 实时更新图集效果
+                if(!isFntImported && charList.length > 0) {
+                    let maxH = 0;
+                    charList.forEach(c => maxH = Math.max(maxH, c.height));
+                    if(parseInt(els.fontSize.value) === 32) { 
+                        els.fontSize.value = maxH;
+                        els.lineHeight.value = maxH;
+                    }
+                    // 更新纹理高度提示
+                    updateTextureHeightInfo(maxH);
+                    if(processed === files.length) {
+                        fillDemoText();
+                        runDemo();  // 更新演示区域
+                    }
+                }
+                
+                // 每处理一个文件就更新一次
+                rebuildAndRender();
+            };
+            img.src = URL.createObjectURL(f);
+        });
+    });
+
+    // === Logic: Parse FNT ===
+    function parseFnt(text) {
+        charList = [];
+        const lines = text.split(/\r?\n/);
+        lines.forEach(line => {
+            if(line.startsWith('common')) {
+                const mLH = line.match(/lineHeight=(\d+)/);
+                if(mLH) els.lineHeight.value = mLH[1];
+            } else if(line.startsWith('info')) {
+                const mSize = line.match(/size=(\d+)/);
+                if(mSize) els.fontSize.value = mSize[1];
+            } else if(line.startsWith('char ')) {
+                const getVal = (k) => { const m = line.match(new RegExp(`${k}=(-?\\d+)`)); return m ? parseInt(m[1]) : 0; };
+                charList.push({
+                    id: getVal('id'), x: getVal('x'), y: getVal('y'),
+                    width: getVal('width'), height: getVal('height'),
+                    xoffset: getVal('xoffset'), yoffset: getVal('yoffset'),
+                    xadvance: getVal('xadvance'), page: 0, chnl: 15, img: null
+                });
+            }
+        });
+    }
+
+    // === Logic: Cut from Atlas ===
+    function cutOriginalChars() {
+        if(!originalImage || !charList.length) return;
+        const cvs = document.createElement('canvas');
+        const ctx = cvs.getContext('2d');
+        charList.forEach(c => {
+            if(c.img) return; 
+            if(c.width > 0 && c.height > 0) {
+                cvs.width = c.width; cvs.height = c.height;
+                ctx.clearRect(0,0,c.width,c.height);
+                ctx.drawImage(originalImage, c.x, c.y, c.width, c.height, 0, 0, c.width, c.height);
+                const i = new Image();
+                i.src = cvs.toDataURL();
+                c.img = i;
+            }
+        });
+    }
+
+    // === Logic: Rebuild Atlas (Packing) ===
+    async function rebuildAndRender() {
+        if(!charList.length) return;
+        updateStatus("正在打包...");
+
+        const pad = parseInt(els.padding.value) || 0;
+        const spacing = parseInt(els.spacing.value) || 0;
+        const isFixedSize = chkFixedSize.checked;
+        
+        let maxW, maxH;
+        
+        // 计算打包的字符数量
+        const packList = charList.filter(c => c.width > 0 && c.height > 0 && c.img);
+        if (!packList.length) {
+            updateStatus("错误: 没有可打包的字符!");
+            return;
+        }
+        
+        // 等待图片加载
+        for(let c of packList) {
+            if(!c.img.complete) await new Promise(r => c.img.onload = r);
+        }
+        
+        // 排序：按高度从大到小
+        packList.sort((a, b) => b.height - a.height);
+        
+        if (isFixedSize) {
+            // 固定大小模式
+            maxW = parseInt(els.maxWidth.value) || 512;
+            maxH = parseInt(els.maxHeight.value) || 512;
+        } else {
+            // 自动适配模式：按2的幂次递增，打包时自动换行
+            // 从64开始尝试，找到能容纳的最小2的幂次方尺寸
+            let size = 64;
+            let packed = false;
+            
+            while (!packed && size <= 8192) {
+                maxW = size;
+                maxH = size;
+                
+                let curX = pad;
+                let curY = pad;
+                let rowH = 0;
+                let allFit = true;
+                
+                for(let c of packList) {
+                    if(curX + c.width + pad > maxW) {
+                        curX = pad;
+                        curY += rowH + spacing;
+                        rowH = 0;
+                    }
+                    if(curY + c.height + pad > maxH) {
+                        allFit = false;
+                        break;
+                    }
+                    
+                    curX += c.width + spacing;
+                    rowH = Math.max(rowH, c.height);
+                }
+                
+                if(allFit) {
+                    packed = true;
+                } else {
+                    size *= 2;
+                }
+            }
+            
+            // 更新输入框显示
+            els.maxWidth.value = maxW;
+            els.maxHeight.value = maxH;
+        }
+
+        // 实际渲染
+        els.resultCanvas.width = maxW;
+        els.resultCanvas.height = maxH;
+        ctxResult.clearRect(0, 0, maxW, maxH);
+
+        let curX = pad;
+        let curY = pad;
+        let rowH = 0;
+        
+        for(let c of packList) {
+            if(curX + c.width + pad > maxW) {
+                curX = pad;
+                curY += rowH + spacing;
+                rowH = 0;
+            }
+            if(curY + c.height + pad > maxH) {
+                updateStatus("错误: 超出最大尺寸限制!");
+                return;
+            }
+            
+            ctxResult.drawImage(c.img, curX, curY);
+            c.newX = curX;
+            c.newY = curY;
+            
+            curX += c.width + spacing;
+            rowH = Math.max(rowH, c.height);
+        }
+
+        generateFntData(maxW, maxH);
+        els.btnDownload.disabled = false;
+        els.atlasInfo.textContent = `${maxW}px x ${maxH}px | ${packList.length} 字符`;
+        updateStatus("就绪");
+        runDemo();
+        updateCharEditorUI();
+    }
+
+    // === Logic: Generate FNT Text ===
+    function generateFntData(w, h) {
+        const fontSize = parseInt(els.fontSize.value);
+        const lh = parseInt(els.lineHeight.value);
+        const base = Math.floor(fontSize * 0.8); // 使用字体大小的80%作为基准线
+        const pad = parseInt(els.padding.value);
+        const spc = parseInt(els.spacing.value);
+        const pngName = (els.outName.value || "font") + ".png";
+
+        let res = `info face="Custom" size=${fontSize} bold=0 italic=0 charset="" unicode=1 stretchH=100 smooth=1 aa=1 padding=${pad},${pad},${pad},${pad} spacing=${spc},${spc} outline=0\n`;
+        res += `common lineHeight=${lh} base=${base} scaleW=${w} scaleH=${h} pages=1 packed=0 alphaChnl=1 redChnl=0 greenChnl=0 blueChnl=0\n`;
+        res += `page id=0 file="${pngName}"\n`;
+        res += `chars count=${charList.length}\n`;
+
+        charList.sort((a, b) => a.id - b.id);
+        charList.forEach(c => {
+            const x = c.newX !== undefined ? c.newX : 0;
+            const y = c.newY !== undefined ? c.newY : 0;
+            const finalXOff = c.xoffset || 0;
+            const finalYOff = c.yoffset || 0;
+            const finalXAdv = c.xadvance || c.width;
+            res += `char id=${c.id}   x=${x}     y=${y}     width=${c.width}    height=${c.height}    xoffset=${finalXOff}    yoffset=${finalYOff}    xadvance=${finalXAdv}    page=0  chnl=15\n`;
+        });
+        finalFntString = res;
+    }
+
+    // === Logic: Demo Render ===
+    function runDemo() {
+        const text = els.demoText.value;
+        const lh = parseInt(els.lineHeight.value) || 32;
+
+        // 获取容器宽度
+        const container = els.demoCanvas.parentElement;
+        const w = container.clientWidth - 20; // 减去padding
+        els.demoCanvas.width = w;
+        els.demoCanvas.height = Math.min(300, container.clientHeight - 20); 
+        ctxDemo.clearRect(0,0,w,400);
+
+        let curX = 0;
+        const lines = text.split('\n');
+        
+        const reqH = lines.length * lh + 50;
+        if(reqH > els.demoCanvas.height) els.demoCanvas.height = reqH;
+
+        lines.forEach((line, idx) => {
+            curX = 10;
+            const baseY = idx * lh;
+            // 使用 Array.from 正确处理代理对和 Unicode 字符
+            const chars = Array.from(line);
+            for(let i=0; i<chars.length; i++) {
+                const char = chars[i];
+                const id = char.codePointAt(0);
+                const c = charList.find(ch => ch.id === id);
+                if(c) {
+                    const drawX = curX + (c.xoffset || 0);
+                    const drawY = baseY + (c.yoffset || 0);
+                    if(c.newX !== undefined && c.width > 0) {
+                        ctxDemo.drawImage(els.resultCanvas, c.newX, c.newY, c.width, c.height, drawX, drawY, c.width, c.height);
+                    }
+                    curX += (c.xadvance || c.width);
+                } else { curX += 20; }
+            }
+        });
+    }
+
+    function updateStatus(msg) {
+        els.status.textContent = msg;
+        els.status.style.opacity = 1;
+        setTimeout(() => { els.status.style.opacity = 0.6; }, 1000);
+    }
+
+    // 更新纹理高度提示信息
+    function updateTextureHeightInfo(height) {
+        const infoElement = document.getElementById('textureHeightInfo');
+        if (infoElement) {
+            infoElement.textContent = `提示: 导入字体贴图的最大高度为 ${height}px，已自动设置为字体大小`;
+        }
+    }
+
+    function fillDemoText() {
+        if(els.demoText.value.startsWith("Hello") || els.demoText.value === "") {
+            let txt = "";
+            let count = 0;
+            for(let c of charList) {
+                if(count > 20) break;
+                txt += String.fromCodePoint(c.id);
+                count++;
+            }
+            els.demoText.value = txt;
+        }
+    }
+
+    els.btnDownload.addEventListener('click', () => {
+        const zip = new JSZip();
+        const prefix = els.outName.value || "font";
+        zip.file(`${prefix}.fnt`, finalFntString);
+        els.resultCanvas.toBlob(blob => {
+            zip.file(`${prefix}.png`, blob);
+            zip.generateAsync({type:"blob"}).then(content => {
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(content);
+                a.download = `${prefix}.zip`;
+                a.click();
+            });
+        });
+    });
+
+    // 文件名修改时重新生成 FNT
+    els.outName.addEventListener('input', () => {
+        if (charList.length > 0 && els.resultCanvas.width > 0) {
+            generateFntData(els.resultCanvas.width, els.resultCanvas.height);
+        }
+    });
+
+    // 帮助模态框
+    window.addEventListener('DOMContentLoaded', () => {
+        const helpModal = document.getElementById('helpModal');
+        const helpClose = document.getElementById('helpClose');
+        const btnHelp = document.getElementById('btnHelp');
+
+        if (btnHelp) {
+            btnHelp.addEventListener('click', () => {
+                if (helpModal) {
+                    helpModal.classList.add('show');
+                }
+            });
+        }
+
+        if (helpClose) {
+            helpClose.addEventListener('click', () => {
+                if (helpModal) {
+                    helpModal.classList.remove('show');
+                }
+            });
+        }
+
+        if (helpModal) {
+            helpModal.addEventListener('click', (e) => {
+                if (e.target === helpModal) {
+                    helpModal.classList.remove('show');
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>
