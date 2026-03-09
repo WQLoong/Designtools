@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>广式半条龙🐲-Spine 资源还原 V8 Turbo// 专业版</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        :root {
+            --bg: #121212; --card: #1e1e1e; --border: #333;
+            --accent: #6366f1; --text: #e5e5e5; --success: #10b981; --err: #ef4444;
+        }
+        body {
+            background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif;
+            margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+        }
+        .container { width: 100%; max-width: 900px; }
+        h1 { text-align: center; color: var(--accent); margin-bottom: 20px; }
+        
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        
+        .card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+            padding: 15px; display: flex; flex-direction: column;
+            transition: border-color 0.3s;
+        }
+        .card.active { border-color: var(--success); }
+        .card-title { font-size: 14px; color: #888; margin-bottom: 10px; font-weight: bold; }
+        
+        .drop-area {
+            flex: 1; border: 2px dashed #444; border-radius: 6px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; background: rgba(255,255,255,0.02); min-height: 100px;
+            padding: 10px; text-align: center;
+        }
+        .drop-area:hover { border-color: var(--accent); background: rgba(99, 102, 241, 0.1); }
+
+        .filename { font-size: 13px; color: #fff; font-weight: bold; margin-top: 5px; word-break: break-all; pointer-events: none; }
+        .icon { font-size: 24px; margin-bottom: 5px; pointer-events: none; }
+        input[type="file"] { display: none; }
+
+        .panel {
+            background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+            padding: 20px; margin-top: 20px;
+        }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+        .val { font-family: monospace; color: var(--accent); font-weight: bold; }
+        
+        button {
+            width: 100%; padding: 15px; background: var(--accent); color: white; border: none;
+            border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 15px;
+        }
+        button:disabled { background: #333; color: #666; cursor: not-allowed; }
+        
+        #log {
+            margin-top: 20px; font-family: monospace; font-size: 12px; color: #aaa;
+            background: #000; padding: 15px; border-radius: 6px; height: 150px; overflow-y: auto;
+            border: 1px solid var(--border);
+        }
+        .log-ok { color: var(--success); }
+        .log-err { color: var(--err); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>广式半条龙🐲-Spine 资源还原 V8 Turbo// 专业版</h1>
+    
+    <div class="grid">
+        <!-- Atlas -->
+        <div class="card" id="card-atlas">
+            <div class="card-title">1. Atlas (.txt / .atlas)</div>
+            <div class="drop-area" id="drop-atlas">
+                <div class="icon">📄</div>
+                <div>点击或拖入</div>
+                <div class="filename" id="name-atlas"></div>
+            </div>
+            <input type="file" id="file-atlas">
+        </div>
+        <!-- Image -->
+        <div class="card" id="card-img">
+            <div class="card-title">2. Image (.png)</div>
+            <div class="drop-area" id="drop-img">
+                <div class="icon">🖼️</div>
+                <div>点击或拖入</div>
+                <div class="filename" id="name-img"></div>
+            </div>
+            <input type="file" id="file-img">
+        </div>
+        <!-- JSON -->
+        <div class="card" id="card-json">
+            <div class="card-title">3. JSON (.json) [智能匹配]</div>
+            <div class="drop-area" id="drop-json">
+                <div class="icon">🦴</div>
+                <div>点击或拖入</div>
+                <div class="filename" id="name-json"></div>
+            </div>
+            <input type="file" id="file-json">
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="info-row">
+            <span>当前倍率:</span>
+            <span class="val" id="ratio-display">1.00000</span>
+        </div>
+        <div class="info-row">
+            <span>图片处理:</span>
+            <span class="val" id="res-display">等待图片...</span>
+        </div>
+        <div class="info-row">
+            <span>匹配状态:</span>
+            <span class="val" id="mode-display" style="color:#888">手动模式</span>
+        </div>
+        
+        <button id="btn-run" disabled onclick="runProcess()">⚡ 修复并下载 ZIP</button>
+    </div>
+
+    <div id="log"></div>
+</div>
+
+<script>
+    // --- 核心状态 ---
+    const state = {
+        atlasText: null,
+        atlasName: 'restored.atlas',
+        imgObj: null,
+        jsonObj: null,
+        ratio: 1.0,
+        isSmart: false
+    };
+
+    // --- 全局拖拽拦截 ---
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => {
+        document.body.addEventListener(e, ev => { ev.preventDefault(); ev.stopPropagation(); }, false);
+    });
+
+    // --- 绑定逻辑 ---
+    function bind(id, type) {
+        const area = document.getElementById('drop-' + id);
+        const input = document.getElementById('file-' + id);
+        const nameEl = document.getElementById('name-' + id);
+        const card = document.getElementById('card-' + id);
+
+        const handle = (file) => {
+            if (!file) return;
+            log(`正在读取 ${type}: ${file.name}...`);
+            nameEl.innerText = file.name;
+            card.classList.add('active');
+
+            const reader = new FileReader();
+            if (type === 'img') {
+                reader.readAsDataURL(file);
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        state.imgObj = img;
+                        log(`✅ 图片加载成功: ${img.width}x${img.height}`, 'ok');
+                        updateUI();
+                    };
+                    img.src = e.target.result;
+                };
+            } else {
+                reader.readAsText(file);
+                reader.onload = (e) => {
+                    const text = e.target.result;
+                    if (type === 'atlas') {
+                        state.atlasText = text;
+                        state.atlasName = file.name;
+                        // 基础 Scale 检测
+                        const match = text.match(/scale\s*:\s*([\d\.]+)/);
+                        if (match && !state.isSmart) {
+                            state.ratio = 1 / parseFloat(match[1]);
+                            log(`Atlas中检测到 Scale, 设置倍率: ${state.ratio.toFixed(4)}`, 'ok');
+                        }
+                    } else if (type === 'json') {
+                        try {
+                            state.jsonObj = JSON.parse(text);
+                            calcSmartRatio();
+                        } catch(err) {
+                            log(`JSON解析失败: ${err.message}`, 'err');
+                        }
+                    }
+                    updateUI();
+                };
+            }
+        };
+
+        area.onclick = () => input.click();
+        input.onchange = (e) => handle(e.target.files[0]);
+        area.ondrop = (e) => handle(e.dataTransfer.files[0]);
+    }
+
+    bind('atlas', 'atlas');
+    bind('img', 'img');
+    bind('json', 'json');
+
+    // --- 智能算法 ---
+    function calcSmartRatio() {
+        if (!state.atlasText || !state.jsonObj) return;
+
+        // 1. 获取 Atlas 里的尺寸
+        const atlasW = {};
+        const lines = state.atlasText.split(/\r?\n/);
+        let curr = null;
+        for (let line of lines) {
+            line = line.trim();
+            if (line && !line.includes(':')) curr = line;
+            if (curr && line.startsWith('size:')) {
+                atlasW[curr] = parseInt(line.split(':')[1].split(',')[0]);
+            }
+        }
+
+        // 2. 获取 JSON 里的尺寸
+        const jsonW = {};
+        if (!state.jsonObj || !state.jsonObj.skins) {
+            log('⚠️ JSON 中没有 skins 数据，跳过智能匹配', 'err');
+            return;
+        }
+        const skins = state.jsonObj.skins;
+        const add = (key, obj) => {
+            if (obj.width && key) {
+                jsonW[key] = obj.width;
+            }
+            if (obj.name && obj.width) {
+                jsonW[obj.name] = obj.width;
+            }
+        };
+
+        // 兼容 Spine 3.8/4.0
+        if (Array.isArray(skins)) {
+            skins.forEach(s => { 
+                if(s.attachments) {
+                    for (let slotName in s.attachments) {
+                        for (let attName in s.attachments[slotName]) {
+                            add(attName, s.attachments[slotName][attName]);
+                        }
+                    }
+                }
+            });
+        } else {
+            for (let k in skins) {
+                for (let slot in skins[k]) {
+                    for (let att in skins[k][slot]) {
+                        add(att, skins[k][slot][att]);
+                    }
+                }
+            }
+        }
+
+        // 3. 匹配 (优先 Frame/Bg)
+        const candidates = Object.keys(atlasW).filter(k => jsonW[k]);
+        candidates.sort((a,b) => {
+            const s = str => (str.toLowerCase().includes('bg') || str.toLowerCase().includes('frame')) ? 1 : 0;
+            return s(b) - s(a);
+        });
+
+        if (candidates.length > 0) {
+            const name = candidates[0];
+            const ratio = jsonW[name] / atlasW[name];
+            if (!isNaN(ratio) && ratio > 0) {
+                state.ratio = ratio;
+                state.isSmart = true;
+                log(`✅ 智能匹配成功: [${name}] 倍率 x${ratio.toFixed(5)}`, 'ok');
+                document.getElementById('mode-display').innerText = `智能匹配 (${name})`;
+                document.getElementById('mode-display').style.color = 'var(--success)';
+            }
+        } else {
+            log('⚠️ 警告: JSON与Atlas没有找到共同的部件，无法自动计算倍率。', 'err');
+        }
+    }
+
+    function updateUI() {
+        document.getElementById('ratio-display').innerText = 'x' + state.ratio.toFixed(5);
+        if (state.imgObj) {
+            const w = Math.round(state.imgObj.width * state.ratio);
+            const h = Math.round(state.imgObj.height * state.ratio);
+            document.getElementById('res-display').innerText = `${state.imgObj.width}x${state.imgObj.height} ➜ ${w}x${h}`;
+        }
+        if (state.atlasText && state.imgObj) {
+            document.getElementById('btn-run').disabled = false;
+        }
+    }
+
+    function log(msg, type='') {
+        const div = document.getElementById('log');
+        div.innerHTML += `<div class="log-${type}">> ${msg}</div>`;
+        div.scrollTop = div.scrollHeight;
+    }
+
+    // --- 核心生成逻辑 ---
+    async function runProcess() {
+        const btn = document.getElementById('btn-run');
+        btn.disabled = true;
+        
+        try {
+            log('🚀 开始打包...');
+            const zip = new JSZip();
+            
+            // 安全检查：确保倍率有效
+            let mult = state.ratio;
+            if (!mult || isNaN(mult) || mult <= 0) {
+                log('⚠️ 倍率无效，重置为 1.0');
+                mult = 1.0;
+            }
+
+            // 安全检查：确保图片存在
+            if (!state.imgObj) {
+                log('❌ 错误: 图片未上传，请上传图片文件！', 'err');
+                alert('请先上传图片文件！');
+                btn.disabled = false;
+                return;
+            }
+
+            if (!state.atlasText) {
+                log('❌ 错误: Atlas未上传，请上传Atlas文件！', 'err');
+                alert('请先上传Atlas文件！');
+                btn.disabled = false;
+                return;
+            }
+
+            log(`✅ 图片对象存在: ${state.imgObj.width}x${state.imgObj.height}`, 'ok');
+
+            // 1. 处理 Atlas
+            const lines = state.atlasText.split(/\r?\n/);
+            let newAtlas = "";
+            let imgName = "restored.png";
+            let foundName = false;
+
+            for (let line of lines) {
+                let t = line.trim();
+                
+                // 抓取第一行非空的内容作为图片名
+                if (!foundName && t.length > 0) {
+                    imgName = t;
+                    foundName = true;
+                }
+
+                if (t.startsWith('size:') || t.startsWith('bounds:') || t.startsWith('offsets:') || t.startsWith('xy:') || t.startsWith('orig:')) {
+                    const key = line.split(':')[0];
+                    const val = line.split(':')[1];
+                    const nums = val.split(',').map(n => Math.round(parseFloat(n) * mult));
+                    newAtlas += `${key}:${nums.join(',')}\n`;
+                } else if (t.startsWith('scale:')) {
+                    continue; 
+                } else {
+                    newAtlas += line + "\n";
+                }
+            }
+            
+            // 修复 .atlas 扩展名
+            let atlasFileName = state.atlasName;
+            if (atlasFileName.endsWith('.txt')) atlasFileName = atlasFileName.replace('.txt', '.atlas');
+            if (!atlasFileName.endsWith('.atlas')) atlasFileName += '.atlas';
+            
+            zip.file(atlasFileName, newAtlas);
+            log(`✅ 已添加 Atlas: ${atlasFileName}`, 'ok');
+
+            // 2. 处理图片 (关键修复点)
+            if (!state.imgObj) throw new Error("图片对象丢失，请重新上传图片！");
+
+            log(`正在处理图片 (尺寸 x${mult.toFixed(2)})...`);
+            const newW = Math.round(state.imgObj.width * mult);
+            const newH = Math.round(state.imgObj.height * mult);
+            
+            if (newW === 0 || newH === 0) throw new Error(`计算出的图片尺寸无效: ${newW}x${newH}`);
+
+            const cvs = document.createElement('canvas');
+            cvs.width = newW;
+            cvs.height = newH;
+            const ctx = cvs.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            // 绘制图片
+            ctx.drawImage(state.imgObj, 0, 0, newW, newH);
+            
+            // 导出 Blob
+            const blob = await new Promise(resolve => cvs.toBlob(resolve, 'image/png'));
+            
+            if (!blob) throw new Error("图片生成失败 (Blob is null)");
+            
+            // 确保文件名有效
+            if (!imgName || imgName === "") imgName = "texture.png";
+            
+            zip.file(imgName, blob);
+            log(`✅ 已添加图片: ${imgName} (${newW}x${newH})`, 'ok');
+
+            // 3. 下载
+            log('📦 正在压缩 ZIP...');
+            const content = await zip.generateAsync({type:"blob"});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(content);
+            link.download = `spine_fixed.zip`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            log('🎉 任务完成！');
+            btn.innerText = "✅ 完成";
+            setTimeout(() => { btn.innerText = "⚡ 修复并下载 ZIP"; btn.disabled = false; }, 2000);
+
+        } catch (e) {
+            log(`❌ 错误: ${e.message}`, 'err');
+            console.error(e);
+            alert("处理出错: " + e.message);
+            btn.disabled = false;
+        }
+    }
+</script>
+</body>
+</html>

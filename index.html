@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>广式半条龙🐲-小工具</title>
+    <style>
+        :root {
+            --background: #000000;
+            --text-primary: #ffffff;
+            --text-secondary: #e0e0e0;
+            --card-bg-1: #34a853;
+            --card-bg-2: #fbbc04;
+            --card-bg-3: #4285f4;
+            --card-bg-4: #9c27b0;
+            --button-bg: rgba(255, 255, 255, 0.1);
+            --button-hover: rgba(255, 255, 255, 0.2);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--background);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: visible;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: visible;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        
+        .slogan {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            font-weight: 500;
+            margin-bottom: 3rem;
+        }
+        
+        .cards-container {
+            display: flex;
+            gap: 1.5rem;
+            overflow-x: auto;
+            padding-bottom: 2rem;
+            scrollbar-width: none;
+            transition: all 0.3s ease;
+            overflow-y: visible;
+            position: relative;
+        }
+        
+        .cards-container:hover {
+            scrollbar-width: thin;
+        }
+        
+        .cards-container::-webkit-scrollbar {
+            height: 0;
+        }
+        
+        .cards-container:hover::-webkit-scrollbar {
+            height: 6px;
+        }
+        
+        .cards-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .cards-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+        
+        .cards-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        .card {
+            flex: 1 1 calc(25% - 1.125rem);
+            min-width: 250px;
+            max-width: 350px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 400px;
+            transition: all 0.3s ease;
+            opacity: 0.7;
+            position: relative;
+            z-index: 1;
+            margin-top: 0;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            opacity: 1;
+            z-index: 10;
+        }
+        
+        .cards-container:hover .card:not(:hover) {
+            opacity: 0.5;
+        }
+        
+        .card-1 {
+            background: var(--card-bg-1);
+        }
+        
+        .card-2 {
+            background: var(--card-bg-2);
+        }
+        
+        .card-3 {
+            background: var(--card-bg-3);
+        }
+        
+        .card-4 {
+            background: var(--card-bg-4);
+        }
+        
+        .card-content {
+            flex: 1;
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+        
+        .card-description {
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .card-button {
+            background: var(--button-bg);
+            color: var(--text-primary);
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            align-self: flex-start;
+        }
+        
+        .card-button:hover {
+            background: var(--button-hover);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .footer-logo {
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+        
+        .footer-links {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            font-size: 0.9rem;
+        }
+        
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+        
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .cards-container {
+                flex-direction: column;
+            }
+            
+            .card {
+                flex: 1;
+                min-height: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <p class="slogan"> </p>
+            <h1> </h1>
+        </header>
+        
+        <div class="cards-container">
+            <!-- 卡片 1 -->
+            <a href="font.html" class="card card-1">
+                <div class="card-content">
+                    <h3 class="card-title">艺术字字体包制作工具</h3>
+                    <p class="card-description">可以生成新字体和修改旧字体包</p>
+                </div>
+                <div class="card-button">启动 →</div>
+            </a>
+            
+            <!-- 卡片 2 -->
+            <a href="spine.html" class="card card-2">
+                <div class="card-content">
+                    <h3 class="card-title">Spine 资源还原工具</h3>
+                    <p class="card-description">专业的 Spine 资源还原工具，支持 Atlas、图片和 JSON 文件的处理与修复。</p>
+                </div>
+                <div class="card-button">启动 →</div>
+            </a>
+            
+            <!-- 卡片 3 -->
+            <a href="tuzhang.html" class="card card-3">
+                <div class="card-content">
+                    <h3 class="card-title">盖章工具</h3>
+                    <p class="card-description">可以对图片进行盖章处理，支持自定义盖章样式。</p>
+                </div>
+                <div class="card-button">启动 →</div>
+            </a>
+            
+        </div>
+    </div>
+    
+    <footer>
+        <div class="footer-logo">广式半条龙🐲</div>
+    </footer>
+</body>
+</html>

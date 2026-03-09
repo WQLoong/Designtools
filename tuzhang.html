@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>盖章工具</title>
+    <style>
+        :root { --primary: #c0392b; --bg: #ecf0f1; --panel-bg: #fff; --border: #bdc3c7; }
+        body { margin: 0; padding: 0; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background: var(--bg); height: 100vh; display: flex; overflow: hidden; }
+        
+        .app-container { display: flex; width: 100%; height: 100%; }
+        
+        /* 左侧预览区 */
+        .preview-area { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background-image: radial-gradient(#bdc3c7 1px, transparent 1px); background-size: 20px 20px; position: relative; }
+        canvas { background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-radius: 4px; }
+        .download-btn { margin-top: 25px; padding: 12px 35px; background: var(--primary); color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 0 #a93226; }
+        .download-btn:active { transform: translateY(4px); box-shadow: none; }
+
+        /* 右侧控制面板 */
+        .controls-panel { width: 420px; background: var(--panel-bg); border-left: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; box-shadow: -5px 0 15px rgba(0,0,0,0.05); }
+        .panel-header { padding: 15px 20px; border-bottom: 1px solid var(--border); background: #f9f9f9; position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; }
+        .panel-header h2 { margin: 0; font-size: 18px; color: #2c3e50; }
+        
+        .control-group { padding: 15px 20px; border-bottom: 1px solid #eee; }
+        .group-title { font-size: 13px; font-weight: 800; color: #7f8c8d; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .form-row { display: grid; grid-template-columns: 80px 1fr 45px; gap: 10px; align-items: center; margin-bottom: 10px; }
+        .form-row.full { grid-template-columns: 1fr; }
+        .form-row label { font-size: 13px; color: #34495e; font-weight: 500; }
+        
+        input[type="text"], select { width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; box-sizing: border-box; }
+        input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--primary); height: 5px; }
+        input[type="number"] { padding: 5px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; }
+
+        .highlight-row { background: #fff8f8; padding: 5px; border: 1px dashed #e74c3c; border-radius: 4px; margin-bottom: 10px; }
+        
+        /* 盖章功能样式 */
+        .canvas-wrapper { 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3); 
+            border: 1px solid #fff; 
+            background-image: linear-gradient(45deg, #eee 25%, transparent 25%), linear-gradient(-45deg, #eee 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #eee 75%), linear-gradient(-45deg, transparent 75%, #eee 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px; 
+            background-color: white;
+            max-width: 100%;
+            max-height: 85vh;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .toolbar { margin-top: 15px; display: flex; gap: 10px; z-index: 100; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .btn { padding: 8px 15px; background: var(--primary); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px;}
+        .btn:hover { background: #a93226; transform: translateY(-1px); }
+        .btn.secondary { background: #34495e; }
+        .stamp-controls { background: #fff8f0; border-left: 4px solid #e67e22; padding: 15px; margin-bottom: 10px; }
+
+        @media (max-width: 900px) {
+            .app-container { flex-direction: column; overflow: auto; }
+            .controls-panel { width: 100%; border-left: none; border-top: 1px solid var(--border); height: auto; }
+            .preview-area { min-height: 350px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="preview-area">
+        <div class="canvas-wrapper">
+            <canvas id="sealCanvas" width="400" height="400"></canvas>
+        </div>
+        <div class="toolbar">
+            <input type="file" id="bgUpload" accept="image/*" style="display:none" onchange="handleImageUpload(this)">
+            <button class="btn secondary" onclick="document.getElementById('bgUpload').click()">📷 上传背景</button>
+            <button class="btn secondary" onclick="clearBackground()">🗑️ 清除背景</button>
+            <button class="btn" onclick="downloadImage()">💾 保存图片</button>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <div class="panel-header">
+            <h2>参数设置</h2>
+            <button onclick="resetDefaults()" style="padding:5px 10px; font-size:12px; background:#95a5a6; border:none; color:white; border-radius:3px; cursor:pointer;">重置</button>
+        </div>
+
+
+
+        <div class="control-group">
+            <div class="group-title">公司名称 (外环)</div>
+            <div class="form-row full">
+                <input type="text" id="companyInput" value="演示网络科技有限公司" oninput="update()">
+            </div>
+            <div class="form-row">
+                <label>字体</label>
+                <select id="companyFont" onchange="update()">
+                    <option value="SimSun, Songti SC">宋体 (标准)</option>
+                    <option value="SimHei, Heiti SC">黑体</option>
+                    <option value="KaiTi, Kaiti SC">楷体</option>
+                    <option value="LiSu">隶书</option>
+                </select>
+                <span></span>
+            </div>
+            <div class="form-row">
+                <label>字号/粗细</label>
+                <div style="display:flex; gap:5px;">
+                    <input type="range" id="companySize" min="15" max="50" step="0.5" value="42" oninput="update()">
+                    <select id="companyWeight" onchange="update()" style="width:60px;">
+                        <option value="bold" selected>加粗</option>
+                        <option value="normal">细</option>
+                        <option value="900">特粗</option>
+                    </select>
+                </div>
+                <span id="companySizeVal">32</span>
+            </div>
+            <div class="form-row">
+                <label>字间距</label>
+                <input type="range" id="companySpacing" min="0" max="2.0" step="0.01" value="0.9" oninput="update()">
+                <span id="companySpacingVal">1.0</span>
+            </div>
+            <div class="form-row">
+                <label>边距(内缩)</label>
+                <input type="range" id="companyMargin" min="0" max="100" step="1" value="58" oninput="update()">
+                <span id="companyMarginVal">25px</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="group-title">防伪编码 (内环)</div>
+            <div class="form-row full">
+                <input type="text" id="codeInput" value="3210987654321" oninput="update()">
+            </div>
+            <div class="form-row">
+                <label>字体</label>
+                <select id="codeFont" onchange="update()">
+                    <option value="KaiTi, Kaiti SC" selected>楷体</option>
+                    <option value="Arial, sans-serif">Arial</option>
+                    <option value="SimSun, Songti SC">宋体</option>
+                    <option value="SimHei, Heiti SC">黑体</option>
+                </select>
+                <span></span>
+            </div>
+            <div class="form-row">
+                <label>字号</label>
+                <input type="range" id="codeSize" min="8" max="40" step="0.5" value="22" oninput="update()">
+                <span id="codeSizeVal">16</span>
+            </div>
+            <div class="form-row">
+                <label>字间距</label>
+                <input type="range" id="codeSpacing" min="0.5" max="3.0" step="0.01" value="1.77" oninput="update()">
+                <span id="codeSpacingVal">1.0</span>
+            </div>
+            <div class="form-row">
+                <label>边距(内缩)</label>
+                <input type="range" id="codeMargin" min="0" max="100" step="1" value="42" oninput="update()">
+                <span id="codeMarginVal">25px</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="group-title">中心区域</div>
+            <div class="form-row">
+                <label>五角星大小</label>
+                <input type="range" id="starSize" min="0" max="100" step="0.5" value="45" oninput="update()">
+                <span id="starSizeVal">45</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="group-title">外观</div>
+            <div class="form-row">
+                <label>印章颜色</label>
+                <input type="color" id="sealColor" value="#d63031" oninput="update()">
+                <span></span>
+            </div>
+            <div class="form-row">
+                <label>边缘模糊</label>
+                <input type="range" id="blurLevel" min="0" max="4" step="0.1" value="0.5" oninput="update()">
+                <span id="blurLevelVal">0.5</span>
+            </div>
+            <div class="form-row">
+                <label>做旧强度</label>
+                <input type="range" id="noiseLevel" min="0" max="100" value="40" oninput="update()">
+                <span id="noiseLevelVal">40</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="stamp-controls">
+                <div style="font-weight:bold; margin-bottom:10px; color:#e67e22;">盖章调整</div>
+                <div class="form-row">
+                    <label>印章缩放</label>
+                    <input type="range" id="stampScale" min="0.2" max="3.0" step="0.05" value="1.0" oninput="update()">
+                    <span id="stampScaleVal">1.0x</span>
+                </div>
+                <div class="form-row">
+                    <label>盖章角度</label>
+                    <input type="range" id="stampRotate" min="-180" max="180" value="0" oninput="update()">
+                    <span id="stampRotateVal">0°</span>
+                </div>
+                <div class="form-row">
+                    <label>透明度</label>
+                    <input type="range" id="stampAlpha" min="10" max="100" value="90" oninput="update()">
+                    <span id="stampAlphaVal">90%</span>
+                </div>
+                <div class="form-row">
+                    <label>X 坐标</label>
+                    <input type="range" id="stampX" min="0" max="1000" value="200" oninput="update()">
+                    <span id="stampXVal">200</span>
+                </div>
+                <div class="form-row">
+                    <label>Y 坐标</label>
+                    <input type="range" id="stampY" min="0" max="1000" value="200" oninput="update()">
+                    <span id="stampYVal">200</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('sealCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // 离屏 Canvas (Buffer) - 用于生成"干净"的印章，然后进行透明擦除
+    const bufferCanvas = document.createElement('canvas');
+    const bufferCtx = bufferCanvas.getContext('2d');
+    
+    // 默认配置
+    const defaults = {
+        width: 400, height: 400,
+        centerX: 200, centerY: 200,
+        radius: 180
+    };
+    
+    // 状态管理
+    let bgImage = null;
+    let sealLayout = { x: 200, y: 200, scale: 1.0, rotation: 0, alpha: 0.9 };
+    let isDragging = false;
+    let dragStartX, dragStartY, initialX, initialY;
+    
+    // Buffer 尺寸设置为印章最大可能尺寸 (防截断)
+    const bufferSize = 600;
+    bufferCanvas.width = bufferSize;
+    bufferCanvas.height = bufferSize;
+
+    function resetDefaults() {
+        update();
+    }
+
+    function update() {
+        // --- 读取参数 ---
+        const params = {
+            company: {
+                text: document.getElementById('companyInput').value,
+                font: document.getElementById('companyFont').value,
+                size: parseFloat(document.getElementById('companySize').value),
+                weight: document.getElementById('companyWeight').value,
+                spacing: parseFloat(document.getElementById('companySpacing').value),
+                margin: parseInt(document.getElementById('companyMargin').value)
+            },
+            code: {
+                text: document.getElementById('codeInput').value,
+                font: document.getElementById('codeFont').value,
+                size: parseFloat(document.getElementById('codeSize').value),
+                spacing: parseFloat(document.getElementById('codeSpacing').value),
+                margin: parseInt(document.getElementById('codeMargin').value)
+            },
+            center: {
+                starSize: parseFloat(document.getElementById('starSize').value)
+            },
+            global: {
+                rotation: 90, // 默认值
+                starRotation: 18, // 默认值
+                color: document.getElementById('sealColor').value,
+                blurLevel: parseFloat(document.getElementById('blurLevel').value),
+                noiseLevel: parseInt(document.getElementById('noiseLevel').value)
+            }
+        };
+        
+        // 读取盖章参数
+        if (!isDragging) {
+            sealLayout.x = parseInt(document.getElementById('stampX').value);
+            sealLayout.y = parseInt(document.getElementById('stampY').value);
+        }
+        sealLayout.scale = parseFloat(document.getElementById('stampScale').value);
+        sealLayout.rotation = parseInt(document.getElementById('stampRotate').value);
+        sealLayout.alpha = parseInt(document.getElementById('stampAlpha').value) / 100;
+
+        // 更新UI数值显示
+        document.getElementById('companySizeVal').innerText = params.company.size;
+        document.getElementById('companySpacingVal').innerText = params.company.spacing;
+        document.getElementById('companyMarginVal').innerText = params.company.margin + 'px';
+        document.getElementById('codeSizeVal').innerText = params.code.size;
+        document.getElementById('codeSpacingVal').innerText = params.code.spacing;
+        document.getElementById('codeMarginVal').innerText = params.code.margin + 'px';
+        document.getElementById('starSizeVal').innerText = params.center.starSize;
+        document.getElementById('blurLevelVal').innerText = params.global.blurLevel;
+        document.getElementById('noiseLevelVal').innerText = params.global.noiseLevel;
+        document.getElementById('stampScaleVal').innerText = sealLayout.scale.toFixed(2) + 'x';
+        document.getElementById('stampRotateVal').innerText = sealLayout.rotation + '°';
+        document.getElementById('stampAlphaVal').innerText = Math.round(sealLayout.alpha * 100) + '%';
+        document.getElementById('stampXVal').innerText = Math.round(sealLayout.x);
+        document.getElementById('stampYVal').innerText = Math.round(sealLayout.y);
+        
+        if (isDragging) {
+            document.getElementById('stampX').value = sealLayout.x;
+            document.getElementById('stampY').value = sealLayout.y;
+        }
+
+        // --- 绘图开始 ---
+        // 1. 清空主画布
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // 2. 绘制背景图
+        if (bgImage) {
+            ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+        }
+        
+        // 3. 准备印章 Buffer (离屏渲染)
+        bufferCtx.clearRect(0, 0, bufferSize, bufferSize);
+        
+        // 3.1 在 Buffer 中心绘制完整的印章 (带旋转)
+        bufferCtx.save();
+        bufferCtx.translate(bufferSize/2, bufferSize/2);
+        
+        // 应用"边缘模糊" (模拟印泥晕染)
+        if (params.global.blurLevel > 0) {
+            bufferCtx.filter = `blur(${params.global.blurLevel}px)`;
+        }
+        
+        drawSealToContext(bufferCtx, params);
+        bufferCtx.restore();
+        
+        // 3.2 核心步骤：应用透明做旧 (Eraser Mode)
+        if (params.global.noiseLevel > 0) {
+            applyTransparentDistress(bufferCtx, params.global.noiseLevel);
+        }
+        
+        // 4. 将 Buffer 画到主画布 (带位置变换)
+        ctx.save();
+        ctx.translate(sealLayout.x, sealLayout.y);
+        ctx.rotate(sealLayout.rotation * Math.PI / 180);
+        ctx.scale(sealLayout.scale, sealLayout.scale);
+        ctx.globalAlpha = sealLayout.alpha;
+        
+        // 绘制 Buffer (注意坐标偏移，因为Buffer中心在 bufferSize/2)
+        ctx.drawImage(bufferCanvas, -bufferSize/2, -bufferSize/2);
+        
+        ctx.restore();
+    }
+    
+    // --- 在指定 Context 上绘制印章 (设计层) ---
+    function drawSealToContext(targetCtx, params) {
+        targetCtx.save();
+        targetCtx.rotate(params.global.rotation * Math.PI / 180);
+
+        const color = params.global.color;
+        targetCtx.strokeStyle = color;
+        targetCtx.fillStyle = color;
+        targetCtx.lineWidth = 6;
+
+        // A. 外圆
+        targetCtx.beginPath();
+        targetCtx.arc(0, 0, defaults.radius, 0, Math.PI * 2);
+        targetCtx.stroke();
+
+        // B. 五角星
+        if (params.center.starSize > 0) {
+            drawStar(targetCtx, 0, 0, params.center.starSize, color, params.global.starRotation);
+        }
+
+        // C. 公司名
+        drawArcText(targetCtx, params.company.text, {
+            radius: defaults.radius - params.company.margin,
+            centerAngle: -Math.PI / 2,
+            isTop: true,
+            font: `${params.company.weight} ${params.company.size}px ${params.company.font}`,
+            spacingMultiplier: params.company.spacing
+        });
+
+        // D. 防伪码
+        drawArcText(targetCtx, params.code.text, {
+            radius: defaults.radius - params.code.margin,
+            centerAngle: Math.PI / 2,
+            isTop: false,
+            font: `normal ${params.code.size}px ${params.code.font}`,
+            spacingMultiplier: params.code.spacing
+        });
+
+        targetCtx.restore();
+    }
+    
+    // --- 核心：真实透明做旧算法 ---
+    function applyTransparentDistress(ctx, intensity) {
+        ctx.save();
+        // 关键：将混合模式设为"擦除"，之后画的东西会让原图像变透明
+        ctx.globalCompositeOperation = 'destination-out';
+        
+        // 模拟纸张纤维的微小矩形和噪点
+        const count = intensity * 80;
+        const r = defaults.radius + 10;
+        const centerX = bufferSize / 2;
+        const centerY = bufferSize / 2;
+
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = Math.sqrt(Math.random()) * r;
+            
+            const x = centerX + Math.cos(angle) * dist;
+            const y = centerY + Math.sin(angle) * dist;
+
+            // 1. 盐噪声 (极小的点)
+            if (Math.random() > 0.5) {
+                ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.8})`;
+                ctx.fillRect(x, y, 1, 1);
+            } 
+            // 2. 纤维噪声 (细长条，模拟纸张纹理)
+            else {
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(Math.random() * Math.PI);
+                ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.5})`;
+                ctx.fillRect(0, 0, Math.random() * 3 + 1, 0.5);
+                ctx.restore();
+            }
+        }
+        
+        // 3. 边缘磨损
+        const edgeCount = intensity * 10;
+        for (let j = 0; j < edgeCount; j++) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = defaults.radius - 2 + Math.random() * 6;
+            const x = centerX + Math.cos(angle) * dist;
+            const y = centerY + Math.sin(angle) * dist;
+            
+            const size = Math.random() * 2;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(0,0,0,0.6)";
+            ctx.fill();
+        }
+
+        ctx.restore();
+    }
+
+    function drawArcText(targetCtx, text, opts) {
+        if (!text) return;
+        targetCtx.save();
+        targetCtx.font = opts.font;
+        targetCtx.textAlign = "center";
+        targetCtx.textBaseline = opts.isTop ? "bottom" : "top";
+        targetCtx.fillStyle = targetCtx.strokeStyle;
+
+        const metrics = targetCtx.measureText(text[0] || "A");
+        const charAngle = metrics.width / opts.radius; 
+        
+        let spacingFactor = opts.spacingMultiplier || 1.0;
+        if (!opts.isTop) spacingFactor *= 0.8; 
+
+        let totalArc = (text.length) * charAngle * spacingFactor;
+        totalArc = Math.min(totalArc, Math.PI * 1.5);
+
+        const step = text.length > 1 ? totalArc / (text.length - 1) : 0;
+        const startAngle = opts.centerAngle - (totalArc / 2);
+
+        for (let i = 0; i < text.length; i++) {
+            let angle = (text.length === 1) ? opts.centerAngle : (startAngle + i * step);
+            targetCtx.save();
+            targetCtx.rotate(angle);
+            targetCtx.translate(0, -opts.radius);
+            if (!opts.isTop) targetCtx.rotate(Math.PI);
+            targetCtx.fillText(text[i], 0, 0);
+            targetCtx.restore();
+        }
+        targetCtx.restore();
+    }
+
+    // 五角星绘制 (增加 rotation 参数)
+    function drawStar(targetCtx, x, y, r, color, rotationOffsetDeg) {
+        targetCtx.save();
+        targetCtx.translate(x, y);
+        
+        let baseAngle = 18 * Math.PI / 180;
+        let offsetAngle = rotationOffsetDeg * Math.PI / 180;
+        
+        targetCtx.rotate(baseAngle + offsetAngle);
+        
+        targetCtx.beginPath();
+        for (let i = 0; i < 5; i++) {
+            targetCtx.lineTo(Math.cos(Math.PI / 180 * (i * 72)) * r, -Math.sin(Math.PI / 180 * (i * 72)) * r);
+            targetCtx.lineTo(Math.cos(Math.PI / 180 * (36 + i * 72)) * r * 0.38, -Math.sin(Math.PI / 180 * (36 + i * 72)) * r * 0.38);
+        }
+        targetCtx.fillStyle = color;
+        targetCtx.fill();
+        targetCtx.restore();
+    }
+
+    function downloadImage() {
+        const link = document.createElement('a');
+        link.download = `Seal_${new Date().getTime()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+    
+    // --- 拖拽逻辑 ---
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const mouseX = (e.clientX - rect.left) * scaleX;
+        const mouseY = (e.clientY - rect.top) * scaleY;
+
+        const currentR = defaults.radius * sealLayout.scale;
+        const dist = Math.hypot(mouseX - sealLayout.x, mouseY - sealLayout.y);
+        
+        if (dist < currentR) {
+            isDragging = true;
+            dragStartX = mouseX;
+            dragStartY = mouseY;
+            initialX = sealLayout.x;
+            initialY = sealLayout.y;
+            canvas.style.cursor = 'grabbing';
+        }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const mouseX = (e.clientX - rect.left) * scaleX;
+        const mouseY = (e.clientY - rect.top) * scaleY;
+
+        sealLayout.x = initialX + (mouseX - dragStartX);
+        sealLayout.y = initialY + (mouseY - dragStartY);
+        update();
+    });
+
+    window.addEventListener('mouseup', () => {
+        isDragging = false;
+        canvas.style.cursor = 'move';
+    });
+    
+    // --- 文件处理 ---
+    function handleImageUpload(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    bgImage = img;
+                    const maxDim = 1200; 
+                    let w = img.width;
+                    let h = img.height;
+                    if (w > maxDim || h > maxDim) {
+                        const ratio = Math.min(maxDim / w, maxDim / h);
+                        w = Math.floor(w * ratio);
+                        h = Math.floor(h * ratio);
+                    }
+                    canvas.width = w;
+                    canvas.height = h;
+                    sealLayout.x = w / 2;
+                    sealLayout.y = h / 2;
+                    document.getElementById('stampX').max = w;
+                    document.getElementById('stampY').max = h;
+                    update();
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function clearBackground() {
+        bgImage = null;
+        canvas.width = defaults.width;
+        canvas.height = defaults.height;
+        sealLayout.x = defaults.width / 2;
+        sealLayout.y = defaults.height / 2;
+        update();
+    }
+
+    window.onload = update;
+</script>
+
+</body>
+</html>
