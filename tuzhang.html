@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>盖章工具</title>
+    <title>印章生成器 - 90度旋转修正版</title>
     <style>
         :root { --primary: #c0392b; --bg: #ecf0f1; --panel-bg: #fff; --border: #bdc3c7; }
         body { margin: 0; padding: 0; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background: var(--bg); height: 100vh; display: flex; overflow: hidden; }
@@ -103,7 +103,7 @@
             <div class="form-row">
                 <label>字号/粗细</label>
                 <div style="display:flex; gap:5px;">
-                    <input type="range" id="companySize" min="15" max="50" step="0.5" value="42" oninput="update()">
+                    <input type="range" id="companySize" min="15" max="50" step="0.5" value="45" oninput="update()">
                     <select id="companyWeight" onchange="update()" style="width:60px;">
                         <option value="bold" selected>加粗</option>
                         <option value="normal">细</option>
@@ -114,7 +114,7 @@
             </div>
             <div class="form-row">
                 <label>字间距</label>
-                <input type="range" id="companySpacing" min="0" max="2.0" step="0.01" value="0.9" oninput="update()">
+                <input type="range" id="companySpacing" min="0" max="2.0" step="0.01" value="1.0" oninput="update()">
                 <span id="companySpacingVal">1.0</span>
             </div>
             <div class="form-row">
@@ -126,8 +126,9 @@
 
         <div class="control-group">
             <div class="group-title">防伪编码 (内环)</div>
-            <div class="form-row full">
-                <input type="text" id="codeInput" value="3210987654321" oninput="update()">
+            <div class="form-row full" style="display:flex; gap:10px; align-items:center;">
+                <input type="text" id="codeInput" value="1101051234567" oninput="update()" style="flex:1;">
+                <button type="button" onclick="generateRandomCode()" style="padding:6px 12px; background:#3498db; color:white; border:none; border-radius:4px; font-size:12px; cursor:pointer;">随机</button>
             </div>
             <div class="form-row">
                 <label>字体</label>
@@ -141,17 +142,17 @@
             </div>
             <div class="form-row">
                 <label>字号</label>
-                <input type="range" id="codeSize" min="8" max="40" step="0.5" value="22" oninput="update()">
+                <input type="range" id="codeSize" min="8" max="40" step="0.5" value="23" oninput="update()">
                 <span id="codeSizeVal">16</span>
             </div>
             <div class="form-row">
                 <label>字间距</label>
-                <input type="range" id="codeSpacing" min="0.5" max="3.0" step="0.01" value="1.77" oninput="update()">
+                <input type="range" id="codeSpacing" min="0.5" max="3.0" step="0.01" value="1.5" oninput="update()">
                 <span id="codeSpacingVal">1.0</span>
             </div>
             <div class="form-row">
                 <label>边距(内缩)</label>
-                <input type="range" id="codeMargin" min="0" max="100" step="1" value="42" oninput="update()">
+                <input type="range" id="codeMargin" min="0" max="100" step="1" value="40" oninput="update()">
                 <span id="codeMarginVal">25px</span>
             </div>
         </div>
@@ -160,7 +161,7 @@
             <div class="group-title">中心区域</div>
             <div class="form-row">
                 <label>五角星大小</label>
-                <input type="range" id="starSize" min="0" max="100" step="0.5" value="45" oninput="update()">
+                <input type="range" id="starSize" min="0" max="100" step="0.5" value="55" oninput="update()">
                 <span id="starSizeVal">45</span>
             </div>
         </div>
@@ -457,8 +458,16 @@
         let spacingFactor = opts.spacingMultiplier || 1.0;
         if (!opts.isTop) spacingFactor *= 0.8; 
 
-        let totalArc = (text.length) * charAngle * spacingFactor;
-        totalArc = Math.min(totalArc, Math.PI * 1.5);
+        let totalArc;
+        // 公司名称使用250°固定夹角，防伪码保持原计算方式
+        if (opts.isTop) {
+            // 标准角度为 250°（夹角）
+            totalArc = 250 * Math.PI / 180;
+        } else {
+            // 防伪码保持原来的计算方式
+            totalArc = (text.length) * charAngle * spacingFactor;
+            totalArc = Math.min(totalArc, Math.PI * 1.5);
+        }
 
         const step = text.length > 1 ? totalArc / (text.length - 1) : 0;
         const startAngle = opts.centerAngle - (totalArc / 2);
@@ -577,6 +586,16 @@
         canvas.height = defaults.height;
         sealLayout.x = defaults.width / 2;
         sealLayout.y = defaults.height / 2;
+        update();
+    }
+    
+    // 生成13位随机数字
+    function generateRandomCode() {
+        let code = '';
+        for (let i = 0; i < 13; i++) {
+            code += Math.floor(Math.random() * 10);
+        }
+        document.getElementById('codeInput').value = code;
         update();
     }
 
