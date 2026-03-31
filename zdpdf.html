@@ -56,6 +56,18 @@
             font-weight: normal;
             font-style: normal;
         }
+        @font-face {
+            font-family: 'PingFang-Thin';
+            src: url('./fonts/苹方-简 细体.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'PingFang-Medium';
+            src: url('./fonts/苹方-简 中黑体.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
 
         /* ========================================================
            CSS 变量系统：由 JS 动态注入和管理，控制页面一切元素 
@@ -66,7 +78,7 @@
             --color-text-main: #333333;
             --color-text-sub: #555555;
             --color-table-bg: #f4f7fb;
-            --color-border: #8C8C8C;
+            --color-border: #8c8c8c;
             --color-bg-page: #ffffff;
 
             /* ==================== [A2] Logo 区域（原子化） ==================== */
@@ -115,7 +127,7 @@
             --cust-addr-color: #555555;
             --cust-addr-offset-x: -3px;
             --cust-addr-offset-y: 0px;
-            --cust-addr-spacing: 0.3px;
+            --cust-addr-spacing: 0.5px;
             --cust-addr-line-height: 1.0;
             --cust-addr-letter-spacing: 0px;
 
@@ -143,7 +155,7 @@
             --cust-region-3-size: 13px;
             --cust-region-3-color: #555555;
             --cust-region-3-offset-x: -3px;
-            --cust-region-3-offset-y: 1px;
+            --cust-region-3-offset-y: 2px;
             --cust-region-3-line-height: 2;
             --cust-region-3-letter-spacing: 0.3px;
 
@@ -184,7 +196,6 @@
             /* ==================== [A8] 表格标题 ==================== */
             --table-title-size: 15px;
             --table-title-color: #333333;
-            --table-title-weight: bold;
             --table-title-bg: #f3f6fe;
             --table-title-offset-x: -3px;
             --table-title-offset-y: 26px;
@@ -232,38 +243,43 @@
             --th-bal-offset-y: -9px;
 
             /* ==================== [B7] 表头分割线 ==================== */
-            --th-border-width: 2px;
-            --th-border-color: #8C8C8C;
+            --th-border-width: 1.5px;
+            --th-border-color: #8c8c8c;
             --th-border-length: 699px;
             --th-border-offset: 10px;
 
+            /* ==================== [B8] 列表分割线 ==================== */
+            --tr-border-width: 1px;
+            --tr-border-color: #8c8c8c;
+            --tr-border-length: 699px;
+
             /* ==================== [C1] 单元格 - 日期列 ==================== */
             --td-date-size: 14px;
-            --td-date-color: #333333;
+            --td-date-color: #191919;
             --td-date-offset-x: -4px;
             --td-date-offset-y: -1px;
 
             /* ==================== [C2] 单元格 - 描述列 ==================== */
             --td-desc-size: 13px;
-            --td-desc-color: #555555;
+            --td-desc-color: #191919;
             --td-desc-offset-x: 40px;
             --td-desc-offset-y: 0px;
 
             /* ==================== [C3] 单元格 - 入账列 ==================== */
             --td-in-size: 13px;
-            --td-in-color: #333333;
+            --td-in-color: #191919;
             --td-in-offset-x: -24px;
             --td-in-offset-y: 0px;
 
             /* ==================== [C4] 单元格 - 出账列 ==================== */
             --td-out-size: 13px;
-            --td-out-color: #333333;
+            --td-out-color: #191919;
             --td-out-offset-x: 3px;
             --td-out-offset-y: 0px;
 
             /* ==================== [C5] 单元格 - 余额列 ==================== */
             --td-bal-size: 13px;
-            --td-bal-color: #333333;
+            --td-bal-color: #191919;
             --td-bal-offset-x: 26px;
             --td-bal-offset-y: 0px;
 
@@ -275,29 +291,29 @@
 
             /* ==================== [D1] 页脚 - 左侧公司信息 ==================== */
             --footer-left-size: 10px;
-            --footer-left-color: #6b6b6b;
+            --footer-left-color: #787878;
             --footer-left-offset-x: 2px;
             --footer-left-offset-y: -36px;
             --footer-left-line-height: 1.3;
             --footer-left-letter-spacing: 0.5px;
 
             /* ==================== [D0] 页脚 - 分割线 ==================== */
-            --footer-border-width: 2px;
-            --footer-border-color: #8C8C8C;
+            --footer-border-width: 1px;
+            --footer-border-color: #000000;
             --footer-border-length: 699px;
             --footer-border-offset-x: 0px;
             --footer-border-offset-y: -30px;
 
             /* ==================== [D2] 页脚 - 右侧页码 ==================== */
-            --footer-right-size: 12px;
-            --footer-right-color: #333333;
-            --footer-right-weight: bold;
+            --footer-right-size: 10px;
+            --footer-right-color: #787878;
+            --footer-right-weight: normal;
             --footer-right-offset-x: 98px;
             --footer-right-offset-y: 16px;
 
             /* ==================== [D3] 页脚 - 网站链接 ==================== */
-            --footer-link-size: 12px;
-            --footer-link-color: #777777;
+            --footer-link-size: 10px;
+            --footer-link-color: #787878;
             --footer-link-offset-x: 2px;
             --footer-link-offset-y: -33px;
             --footer-link-letter-spacing: 0.1px;
@@ -451,6 +467,7 @@
         /* --- 账号日期标签 --- */
         .account-date-label {
             display: inline;
+            font-family: 'PingFang-Thin', 'PingFangSC-Regular', sans-serif;
             font-size: var(--date-account-label-size);
             color: var(--date-account-label-color);
             line-height: var(--date-account-label-line-height);
@@ -463,6 +480,7 @@
         /* --- 账号日期值 --- */
         .account-date-value {
             display: inline;
+            font-family: 'PingFang-Thin', 'PingFangSC-Regular', sans-serif;
             font-size: var(--date-account-value-size);
             color: var(--date-account-value-color);
             line-height: var(--date-account-value-line-height);
@@ -480,6 +498,7 @@
             line-height: 1.8;
         }
         .customer-info .cust-name {
+            font-family: 'PingFang-Thin', 'PingFangSC-Regular', sans-serif;
             font-size: var(--cust-name-size);
             color: var(--cust-name-color);
             font-weight: var(--cust-name-font-weight);
@@ -490,6 +509,7 @@
             top: var(--cust-name-offset-y);
         }
         .customer-info .cust-addr {
+            font-family: 'PingFang-Thin', 'PingFangSC-Regular', sans-serif;
             font-size: var(--cust-addr-size);
             color: var(--cust-addr-color);
             line-height: var(--cust-addr-line-height);
@@ -499,6 +519,7 @@
             top: var(--cust-addr-offset-y);
         }
         .customer-info .cust-region {
+            font-family: 'PingFang-Thin', 'PingFangSC-Regular', sans-serif;
             font-size: var(--cust-region-size);
             color: var(--cust-region-color);
             line-height: var(--cust-region-line-height);
@@ -508,6 +529,7 @@
             top: var(--cust-region-offset-y);
         }
         .customer-info .cust-region-1 {
+            font-family: 'PingFang-Thin', 'PingFangSC-Regular', sans-serif;
             font-size: var(--cust-region-1-size);
             color: var(--cust-region-1-color);
             line-height: var(--cust-region-1-line-height);
@@ -517,6 +539,7 @@
             top: var(--cust-region-1-offset-y);
         }
         .customer-info .cust-region-2 {
+            font-family: 'PingFang-Thin', 'PingFangSC-Regular', sans-serif;
             font-size: var(--cust-region-2-size);
             color: var(--cust-region-2-color);
             line-height: var(--cust-region-2-line-height);
@@ -526,6 +549,7 @@
             top: var(--cust-region-2-offset-y);
         }
         .customer-info .cust-region-3 {
+            font-family: 'PingFang-Thin', 'PingFangSC-Regular', sans-serif;
             font-size: var(--cust-region-3-size);
             color: var(--cust-region-3-color);
             line-height: var(--cust-region-3-line-height);
@@ -555,6 +579,7 @@
             top: var(--contact-title-offset-y);
         }
         .contact-info .detail {
+            font-family: 'PingFang-Thin', 'PingFangSC-Regular', sans-serif;
             font-size: var(--contact-detail-size);
             color: var(--contact-detail-color);
             line-height: var(--contact-detail-line-height);
@@ -609,7 +634,13 @@
         /* --- 表格区域 --- */
         table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
+            border: none;
+        }
+
+        th, td {
+            border: none;
         }
 
         /* --- 表头通用样式 --- */
@@ -673,6 +704,7 @@
         }
 
         tbody {
+            font-family: 'PingFang-Thin', 'PingFangSC-Regular', sans-serif;
             transform: translateY(var(--tbody-offset-y));
         }
         tbody tr {
@@ -681,11 +713,11 @@
         tbody tr::after {
             content: '';
             position: absolute;
-            left: calc(50% - var(--th-border-length) / 2);
-            width: var(--th-border-length);
+            left: calc(50% - var(--tr-border-length) / 2);
+            width: var(--tr-border-length);
             bottom: 0;
-            height: 2px;
-            background: var(--color-border);
+            height: var(--tr-border-width);
+            background: var(--tr-border-color);
         }
 
         td.col-date {
@@ -799,9 +831,9 @@
             .sidebar { display: none !important; }
             .preview-area { padding: 0; overflow: visible; height: auto; display: block; }
             .page { box-shadow: none; border: none; page-break-after: auto; page-break-before: auto; }
-            table, .contact-info, .customer-info, .table-title { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            table, .contact-info, .customer-info, .table-title, .footer-left, .footer-right, .website-link { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             thead::after, tbody tr::after, .footer-border { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .website-link { text-decoration: none !important; color: inherit !important; cursor: default !important; pointer-events: none !important; }
+            .website-link { text-decoration: none !important; color: var(--footer-link-color) !important; cursor: default !important; pointer-events: none !important; }
             @page { size: A4; margin: 0; }
         }
     </style>
@@ -960,7 +992,7 @@
                 <div class="form-row"><label>标题行高</label><div class="spin-wrapper"><input type="text" data-var="--contact-title-line-height" value="2"></div></div>
                 <div class="form-row"><label>标题字间距</label><div class="spin-wrapper"><input type="text" data-var="--contact-title-letter-spacing" value="0px"></div></div>
                 <div class="form-row"><label>详情字号</label><div class="spin-wrapper"><input type="text" data-var="--contact-detail-size" value="12px"></div></div>
-                <div class="form-row"><label>详情颜色</label><input type="color" data-var="--contact-detail-color" value="#8ab4f8"></div>
+                <div class="form-row"><label>详情颜色</label><input type="color" data-var="--contact-detail-color" value="#93AAF7"></div>
                 <div class="form-row"><label>详情左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--contact-detail-offset-x" value="0px"></div></div>
                 <div class="form-row"><label>详情上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--contact-detail-offset-y" value="-1px"></div></div>
                 <div class="form-row"><label>详情行高</label><div class="spin-wrapper"><input type="text" data-var="--contact-detail-line-height" value="2"></div></div>
@@ -1058,10 +1090,18 @@
             <!-- [B7] 表头分割线 -->
             <div class="setting-group" data-group="B7">
                 <h3>➖ 表头分割线</h3>
-                <div class="form-row"><label>线条粗细</label><div class="spin-wrapper"><input type="text" data-var="--th-border-width" value="2px"></div></div>
+                <div class="form-row"><label>线条粗细</label><div class="spin-wrapper"><input type="text" data-var="--th-border-width" value="1px"></div></div>
                 <div class="form-row"><label>线条颜色</label><input type="color" data-var="--th-border-color" value="#8C8C8C"></div>
                 <div class="form-row"><label>线条长度</label><div class="spin-wrapper"><input type="text" data-var="--th-border-length" value="699px"></div></div>
                 <div class="form-row"><label>线条位置偏移</label><div class="spin-wrapper"><input type="text" data-var="--th-border-offset" value="10px"></div></div>
+            </div>
+
+            <!-- [B8] 列表分割线 -->
+            <div class="setting-group" data-group="B8">
+                <h3>➖ 列表分割线</h3>
+                <div class="form-row"><label>线条粗细</label><div class="spin-wrapper"><input type="text" data-var="--tr-border-width" value="1px"></div></div>
+                <div class="form-row"><label>线条颜色</label><input type="color" data-var="--tr-border-color" value="#8C8C8C"></div>
+                <div class="form-row"><label>线条长度</label><div class="spin-wrapper"><input type="text" data-var="--tr-border-length" value="699px"></div></div>
             </div>
 
             <!-- [C] 单元格样式 -->
@@ -1077,7 +1117,7 @@
             <div class="setting-group" data-group="C1">
                 <h3>📆 单元格 - 日期列</h3>
                 <div class="form-row"><label>日期列字号</label><div class="spin-wrapper"><input type="text" data-var="--td-date-size" value="13px"></div></div>
-                <div class="form-row"><label>日期列颜色</label><input type="color" data-var="--td-date-color" value="#333333"></div>
+                <div class="form-row"><label>日期列颜色</label><input type="color" data-var="--td-date-color" value="#191919"></div>
                 <div class="form-row"><label>日期左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--td-date-offset-x" value="-4px"></div></div>
                 <div class="form-row"><label>日期上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--td-date-offset-y" value="-1px"></div></div>
             </div>
@@ -1095,7 +1135,7 @@
             <div class="setting-group" data-group="C3">
                 <h3>⬆️ 单元格 - 入账列</h3>
                 <div class="form-row"><label>入账列字号</label><div class="spin-wrapper"><input type="text" data-var="--td-in-size" value="13px"></div></div>
-                <div class="form-row"><label>入账列颜色</label><input type="color" data-var="--td-in-color" value="#333333"></div>
+                <div class="form-row"><label>入账列颜色</label><input type="color" data-var="--td-in-color" value="#191919"></div>
                 <div class="form-row"><label>入账左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--td-in-offset-x" value="-24px"></div></div>
                 <div class="form-row"><label>入账上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--td-in-offset-y" value="0px"></div></div>
             </div>
@@ -1104,7 +1144,7 @@
             <div class="setting-group" data-group="C4">
                 <h3>⬇️ 单元格 - 出账列</h3>
                 <div class="form-row"><label>出账列字号</label><div class="spin-wrapper"><input type="text" data-var="--td-out-size" value="13px"></div></div>
-                <div class="form-row"><label>出账列颜色</label><input type="color" data-var="--td-out-color" value="#333333"></div>
+                <div class="form-row"><label>出账列颜色</label><input type="color" data-var="--td-out-color" value="#191919"></div>
                 <div class="form-row"><label>出账左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--td-out-offset-x" value="3px"></div></div>
                 <div class="form-row"><label>出账上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--td-out-offset-y" value="0px"></div></div>
             </div>
@@ -1113,7 +1153,7 @@
             <div class="setting-group" data-group="C5">
                 <h3>💰 单元格 - 余额列</h3>
                 <div class="form-row"><label>余额列字号</label><div class="spin-wrapper"><input type="text" data-var="--td-bal-size" value="13px"></div></div>
-                <div class="form-row"><label>余额列颜色</label><input type="color" data-var="--td-bal-color" value="#333333"></div>
+                <div class="form-row"><label>余额列颜色</label><input type="color" data-var="--td-bal-color" value="#191919"></div>
                 <div class="form-row"><label>余额左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--td-bal-offset-x" value="26px"></div></div>
                 <div class="form-row"><label>余额上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--td-bal-offset-y" value="0px"></div></div>
             </div>
@@ -1121,29 +1161,29 @@
             <!-- [D0] 页脚 - 分割线 -->
             <div class="setting-group" data-group="D0">
                 <h3>➖ 页脚 - 分割线</h3>
-                <div class="form-row"><label>线条粗细</label><div class="spin-wrapper"><input type="text" data-var="--footer-border-width" value="2px"></div></div>
+                <div class="form-row"><label>线条粗细</label><div class="spin-wrapper"><input type="text" data-var="--footer-border-width" value="1px"></div></div>
                 <div class="form-row"><label>线条颜色</label><input type="color" data-var="--footer-border-color" value="#8C8C8C"></div>
                 <div class="form-row"><label>线条长度</label><div class="spin-wrapper"><input type="text" data-var="--footer-border-length" value="699px"></div></div>
                 <div class="form-row"><label>左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-border-offset-x" value="0px"></div></div>
-                <div class="form-row"><label>上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-border-offset-y" value="0px"></div></div>
+                <div class="form-row"><label>上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-border-offset-y" value="-30px"></div></div>
             </div>
 
             <!-- [D1] 页脚 - 左侧 -->
             <div class="setting-group" data-group="D1">
                 <h3>📜 页脚 - 左侧公司信息</h3>
-                <div class="form-row"><label>左侧字号</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-size" value="13px"></div></div>
-                <div class="form-row"><label>左侧颜色</label><input type="color" data-var="--footer-left-color" value="#777777"></div>
-                <div class="form-row"><label>左侧行距</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-line-height" value="1.5"></div></div>
-                <div class="form-row"><label>左侧字间距</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-letter-spacing" value="0px"></div></div>
-                <div class="form-row"><label>左侧左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-offset-x" value="1px"></div></div>
-                <div class="form-row"><label>左侧上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-offset-y" value="0px"></div></div>
+                <div class="form-row"><label>左侧字号</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-size" value="10px"></div></div>
+                <div class="form-row"><label>左侧颜色</label><input type="color" data-var="--footer-left-color" value="#787878"></div>
+                <div class="form-row"><label>左侧行距</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-line-height" value="1.3"></div></div>
+                <div class="form-row"><label>左侧字间距</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-letter-spacing" value="0.5px"></div></div>
+                <div class="form-row"><label>左侧左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-offset-x" value="2px"></div></div>
+                <div class="form-row"><label>左侧上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-offset-y" value="-36px"></div></div>
             </div>
 
             <!-- [D2] 页脚 - 右侧页码 -->
             <div class="setting-group" data-group="D2">
                 <h3>📑 页脚 - 右侧页码</h3>
-                <div class="form-row"><label>右侧字号</label><div class="spin-wrapper"><input type="text" data-var="--footer-right-size" value="12px"></div></div>
-                <div class="form-row"><label>右侧颜色</label><input type="color" data-var="--footer-right-color" value="#333333"></div>
+                <div class="form-row"><label>右侧字号</label><div class="spin-wrapper"><input type="text" data-var="--footer-right-size" value="10px"></div></div>
+                <div class="form-row"><label>右侧颜色</label><input type="color" data-var="--footer-right-color" value="#787878"></div>
                 <div class="form-row"><label>右侧左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-right-offset-x" value="0px"></div></div>
                 <div class="form-row"><label>右侧上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-right-offset-y" value="0px"></div></div>
             </div>
@@ -1151,8 +1191,8 @@
             <!-- [D3] 页脚 - 网站链接 -->
             <div class="setting-group" data-group="D3">
                 <h3>🔗 页脚 - 网站链接</h3>
-                <div class="form-row"><label>链接字号</label><div class="spin-wrapper"><input type="text" data-var="--footer-link-size" value="12px"></div></div>
-                <div class="form-row"><label>链接颜色</label><input type="color" data-var="--footer-link-color" value="#777777"></div>
+                <div class="form-row"><label>链接字号</label><div class="spin-wrapper"><input type="text" data-var="--footer-link-size" value="10px"></div></div>
+                <div class="form-row"><label>链接颜色</label><input type="color" data-var="--footer-link-color" value="#787878"></div>
                 <div class="form-row"><label>链接左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-link-offset-x" value="-6px"></div></div>
                 <div class="form-row"><label>链接上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-link-offset-y" value="21px"></div></div>
                 <div class="form-row"><label>链接字距</label><div class="spin-wrapper"><input type="text" data-var="--footer-link-letter-spacing" value="0px"></div></div>
@@ -1534,7 +1574,7 @@
                     <div class="footer-border"></div>
                     <div class="footer-content">
                         <div class="footer-left">
-                            WorldFirst (Singapore) Merchant Services Pte. Ltd. （公司注册号为201735998W）（“WorldFirst MS”）是新加坡金融管理局根据Payment Services Act 2019授权的Major Payment Institution。WorldFirst MS的注册地址是128 Beach Road, #20-01, Guoco Midtown Office, Singapore 189773。
+                            WorldFirst (Singapore) Merchant Services Pte. Ltd.. （公司注册号为201735998W）（“WorldFirst MS”）是新加坡金融管理局根据Payment Services Act 2019授权的Major Payment Institution。WorldFirst MS的注册地址是128 Beach Road, #20-01, Guoco Midtown Office, Singapore 189773。
                         </div>
                         <span class="website-link">https://www.worldfirst.com.cn/cn/</span>
                     </div>
