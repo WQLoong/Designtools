@@ -367,7 +367,9 @@
         .btn-danger { background: #ea4335; color: white; }
         .btn-danger:hover { background: #d33426; }
         .btn-print { background: var(--color-theme); color: white; padding: 12px; font-size: 15px; margin-top: 5px;}
-        
+        .date-input-area { margin-top: 10px; display: flex; align-items: center; gap: 5px; }
+        .date-input-area input { padding: 5px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; }
+
         /* 数据输入区 */
         .data-input-area { padding: 15px 20px; border-bottom: 1px solid #eee; }
         .file-upload { width: 100%; padding: 8px; border: 1px dashed #ccc; background: #fafafa; border-radius: 4px; margin-bottom: 10px; font-size: 12px;}
@@ -857,6 +859,11 @@
 
         <div class="print-button-area">
             <button class="btn btn-print btn-primary" onclick="window.print()">🖨️ 打印 / 导出 PDF</button>
+            <div class="date-input-area">
+                <label>日期范围：</label>
+                <input type="date" id="filter-date-start" value="2026/02/01"> ~
+                <input type="date" id="filter-date-end" value="2026/02/28">
+            </div>
         </div>
 
         <div class="settings-scroll" id="settingsPanel">
@@ -1267,6 +1274,28 @@
             });
         }
 
+        function updateFilterDateDisplay() {
+            const start = document.getElementById('filter-date-start')?.value || '';
+            const end = document.getElementById('filter-date-end')?.value || '';
+            const display = document.getElementById('filter-date-display');
+            if (display) {
+                const formatDate = (dateStr) => dateStr ? dateStr.replace(/-/g, '/') : '';
+                display.textContent = start && end ? `${formatDate(start)} ~ ${formatDate(end)}` : '';
+            }
+        }
+
+        function initDateInputs() {
+            const startInput = document.getElementById('filter-date-start');
+            const endInput = document.getElementById('filter-date-end');
+            if (startInput) {
+                startInput.addEventListener('change', updateFilterDateDisplay);
+            }
+            if (endInput) {
+                endInput.addEventListener('change', updateFilterDateDisplay);
+            }
+            updateFilterDateDisplay();
+        }
+
         // 2. 监听输入变化，实时修改 CSS 并触发防抖重新排版
         let renderDebounce;
         settingInputs.forEach(input => {
@@ -1545,7 +1574,7 @@
                                 <div class="detail">+400 976 6666</div>
                             </div>
                         </div>
-                        <span class="filter-label">筛选时间范围 :</span><span class="filter-value">2026/02/01 ~ 2026/02/28</span>
+                        <span class="filter-label">筛选时间范围 :</span><span class="filter-value" id="filter-date-display"></span>
                         <div class="table-title">交易明细</div>
                     `;
                 }
@@ -1655,6 +1684,7 @@
             runCollisionEngine();
             initSpinButtons();
             initKeyboardFineTune();
+            initDateInputs();
             toggleSettingsPanel();
         };
     </script>
