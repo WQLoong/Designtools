@@ -1,0 +1,1622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专业电子账单生成系统 - Pro</title>
+    <style>
+        /* ========================================================
+           字体引用
+           ======================================================== */
+        @font-face {
+            font-family: 'PingFangSC-Regular';
+            src: url('./fonts/PingFangSC-Regular.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'PingFangSC-Medium';
+            src: url('./fonts/PingFangSC-Medium.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'PingFangSC-Semibold';
+            src: url('./fonts/PingFangSC-Semibold.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'PingFangSC-Light';
+            src: url('./fonts/PingFangSC-Light.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'PingFangSC-Thin';
+            src: url('./fonts/PingFangSC-Thin.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'PingFangSC-Ultralight';
+            src: url('./fonts/PingFangSC-Ultralight.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'PingFangTC-Medium';
+            src: url('./fonts/PingFangTC-Medium.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'PingFang-Medium';
+            src: url('./fonts/PINGFANG MEDIUM.TTF') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        /* ========================================================
+           CSS 变量系统：由 JS 动态注入和管理，控制页面一切元素 
+           ======================================================== */
+        :root {
+            /* ==================== [A1] 全局颜色 ==================== */
+            --color-theme: #e6004f;
+            --color-text-main: #333333;
+            --color-text-sub: #555555;
+            --color-table-bg: #f4f7fb;
+            --color-border: #8C8C8C;
+            --color-bg-page: #ffffff;
+
+            /* ==================== [A2] Logo 区域（原子化） ==================== */
+            --logo-size: 36px;
+            --logo-height: 27.5px;
+            --logo-color: #e6004f;
+            --logo-offset-x: -2px;
+            --logo-offset-y: -14px;
+            --logo-line-height: 1;
+            --logo-letter-spacing: 0px;
+            --logo-font-weight: 900;
+
+            /* ==================== [A3] 页面标题 ==================== */
+            --title-main-size: 21px;
+            --title-main-color: #333333;
+            --title-main-offset-x: -6px;
+            --title-main-offset-y: -1px;
+            --title-main-weight: bold;
+            --title-main-line-height: 1.2;
+            --title-main-letter-spacing: 0.4px;
+
+            /* ==================== [A4] 账号日期 ==================== */
+            --date-account-label-size: 13px;
+            --date-account-label-color: #888888;
+            --date-account-label-offset-x: -3px;
+            --date-account-label-offset-y: -6px;
+            --date-account-label-line-height: 1.5;
+            --date-account-label-letter-spacing: 0.5px;
+            --date-account-value-size: 13px;
+            --date-account-value-color: #888888;
+            --date-account-value-offset-x: 8px;
+            --date-account-value-offset-y: -6px;
+            --date-account-value-line-height: 1.5;
+            --date-account-value-letter-spacing: 0.5px;
+
+            /* ==================== [A5] 客户区块 ==================== */
+            --cust-name-size: 13px;
+            --cust-name-color: #333333;
+            --cust-name-offset-x: -3px;
+            --cust-name-offset-y: -4px;
+            --cust-name-line-height: 2;
+            --cust-name-letter-spacing: 0.1px;
+            --cust-name-font-weight: normal;
+
+            --cust-addr-size: 13px;
+            --cust-addr-color: #555555;
+            --cust-addr-offset-x: -3px;
+            --cust-addr-offset-y: 0px;
+            --cust-addr-spacing: 0.3px;
+            --cust-addr-line-height: 1.0;
+            --cust-addr-letter-spacing: 0px;
+
+            --cust-region-size: 13px;
+            --cust-region-color: #555555;
+            --cust-region-offset-x: -7px;
+            --cust-region-offset-y: 1;
+            --cust-region-line-height: 3.5;
+            --cust-region-letter-spacing: 0.3px;
+
+            --cust-region-1-size: 13px;
+            --cust-region-1-color: #555555;
+            --cust-region-1-offset-x: -3px;
+            --cust-region-1-offset-y: 4px;
+            --cust-region-1-line-height: 2.5;
+            --cust-region-1-letter-spacing: 0.3px;
+
+            --cust-region-2-size: 13px;
+            --cust-region-2-color: #555555;
+            --cust-region-2-offset-x: -3px;
+            --cust-region-2-offset-y: 1px;
+            --cust-region-2-line-height: 2;
+            --cust-region-2-letter-spacing: 0.3px;
+
+            --cust-region-3-size: 13px;
+            --cust-region-3-color: #555555;
+            --cust-region-3-offset-x: -3px;
+            --cust-region-3-offset-y: 1px;
+            --cust-region-3-line-height: 2;
+            --cust-region-3-letter-spacing: 0.3px;
+
+            /* ==================== [A6] 联系信息区块 ==================== */
+            --contact-info-offset-x: 0px;
+            --contact-info-offset-y: 0px;
+            --contact-title-size: 12px;
+            --contact-title-color: #4285f4;
+            --contact-title-weight: bold;
+            --contact-title-offset-x: 0px;
+            --contact-title-offset-y: 20px;
+            --contact-title-line-height: 2;
+            --contact-title-letter-spacing: 0px;
+
+            --contact-detail-size: 12px;
+            --contact-detail-color: #8ab4f8;
+            --contact-detail-offset-x: 0;
+            --contact-detail-offset-y: 18px;
+            --contact-detail-line-height: 2;
+            --contact-detail-letter-spacing: 0px;
+
+            /* ==================== [A7] 筛选范围 ==================== */
+            --filter-label-size: 15px;
+            --filter-label-color: #333333;
+            --filter-label-weight: bold;
+            --filter-label-offset-x: -4px;
+            --filter-label-offset-y: 4px;
+            --filter-label-line-height: 1;
+            --filter-label-letter-spacing: 0px;
+            --filter-value-size: 15px;
+            --filter-value-color: #333333;
+            --filter-value-weight: bold;
+            --filter-value-offset-x: 4px;
+            --filter-value-offset-y: 4px;
+            --filter-value-line-height: 1;
+            --filter-value-letter-spacing: 0px;
+
+            /* ==================== [A8] 表格标题 ==================== */
+            --table-title-size: 15px;
+            --table-title-color: #333333;
+            --table-title-weight: bold;
+            --table-title-bg: #f3f6fe;
+            --table-title-offset-x: -3px;
+            --table-title-offset-y: 26px;
+            --table-title-spacing: 0px;
+            --table-title-width: 697px;
+            --table-title-height: 27px;
+            --table-title-pad-x: 4px;
+            --table-title-pad-y: 3px;
+
+            /* ==================== [B1] 表头 - 通用 ==================== */
+            --th-size: 14px;
+            --th-color: #333333;
+            --th-weight: bold;
+            --th-offset-x: -10px;
+            --th-offset-y: -10px;
+
+            /* ==================== [B2] 表头 - 日期列 ==================== */
+            --th-date-size: 14px;
+            --th-date-color: #333333;
+            --th-date-offset-x: -10px;
+            --th-date-offset-y: -9px;
+
+            /* ==================== [B3] 表头 - 描述列 ==================== */
+            --th-desc-size: 14px;
+            --th-desc-color: #333333;
+            --th-desc-offset-x: 32px;
+            --th-desc-offset-y: -9px;
+
+            /* ==================== [B4] 表头 - 入账列 ==================== */
+            --th-in-size: 14px;
+            --th-in-color: #333333;
+            --th-in-offset-x: -25px;
+            --th-in-offset-y: -9px;
+
+            /* ==================== [B5] 表头 - 出账列 ==================== */
+            --th-out-size: 14px;
+            --th-out-color: #333333;
+            --th-out-offset-x: -3px;
+            --th-out-offset-y: -9px;
+
+            /* ==================== [B6] 表头 - 余额列 ==================== */
+            --th-bal-size: 14px;
+            --th-bal-color: #333333;
+            --th-bal-offset-x: 19px;
+            --th-bal-offset-y: -9px;
+
+            /* ==================== [B7] 表头分割线 ==================== */
+            --th-border-width: 2px;
+            --th-border-color: #8C8C8C;
+            --th-border-length: 699px;
+            --th-border-offset: 10px;
+
+            /* ==================== [C1] 单元格 - 日期列 ==================== */
+            --td-date-size: 14px;
+            --td-date-color: #333333;
+            --td-date-offset-x: -4px;
+            --td-date-offset-y: -1px;
+
+            /* ==================== [C2] 单元格 - 描述列 ==================== */
+            --td-desc-size: 13px;
+            --td-desc-color: #555555;
+            --td-desc-offset-x: 40px;
+            --td-desc-offset-y: 0px;
+
+            /* ==================== [C3] 单元格 - 入账列 ==================== */
+            --td-in-size: 13px;
+            --td-in-color: #333333;
+            --td-in-offset-x: -24px;
+            --td-in-offset-y: 0px;
+
+            /* ==================== [C4] 单元格 - 出账列 ==================== */
+            --td-out-size: 13px;
+            --td-out-color: #333333;
+            --td-out-offset-x: 3px;
+            --td-out-offset-y: 0px;
+
+            /* ==================== [C5] 单元格 - 余额列 ==================== */
+            --td-bal-size: 13px;
+            --td-bal-color: #333333;
+            --td-bal-offset-x: 26px;
+            --td-bal-offset-y: 0px;
+
+            /* ==================== [C6] 单元格 - 行间距 ==================== */
+            --td-line-height: 1.3;
+            --td-padding-top: 5px;
+            --td-padding-bottom: 4px;
+            --tbody-offset-y: -12px;
+
+            /* ==================== [D1] 页脚 - 左侧公司信息 ==================== */
+            --footer-left-size: 10px;
+            --footer-left-color: #6b6b6b;
+            --footer-left-offset-x: 2px;
+            --footer-left-offset-y: -36px;
+            --footer-left-line-height: 1.3;
+            --footer-left-letter-spacing: 0.5px;
+
+            /* ==================== [D0] 页脚 - 分割线 ==================== */
+            --footer-border-width: 2px;
+            --footer-border-color: #8C8C8C;
+            --footer-border-length: 699px;
+            --footer-border-offset-x: 0px;
+            --footer-border-offset-y: -30px;
+
+            /* ==================== [D2] 页脚 - 右侧页码 ==================== */
+            --footer-right-size: 12px;
+            --footer-right-color: #333333;
+            --footer-right-weight: bold;
+            --footer-right-offset-x: 98px;
+            --footer-right-offset-y: 16px;
+
+            /* ==================== [D3] 页脚 - 网站链接 ==================== */
+            --footer-link-size: 12px;
+            --footer-link-color: #777777;
+            --footer-link-offset-x: 2px;
+            --footer-link-offset-y: -33px;
+            --footer-link-letter-spacing: 0.1px;
+
+            /* ==================== [E1] 页面边距 ==================== */
+            --page-pad-top: 10mm;
+            --page-pad-left: 15mm;
+            --page-pad-right: 15mm;
+
+            /* ==================== [E2] 页面内部间距 ==================== */
+            --space-header-bottom: 20px;
+            --space-title-table: 10px;
+
+            /* ==================== [E3] 表格列宽 ==================== */
+            --col-date-width: 12%;
+            --col-desc-width: 38%;
+            --col-in-width: 15%;
+            --col-out-width: 15%;
+            --col-bal-width: 20%;
+        }
+
+        /* 全局重置 */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: "PingFangSC-Regular", "PingFang SC", "PingFang-SC-Regular", "Microsoft YaHei", sans-serif; background-color: #525659; color: var(--color-text-main); height: 100vh; overflow: hidden; display: flex; }
+
+        /* ========================================================
+           UI 布局：左侧控制台 + 右侧 PDF 预览区 
+           ======================================================== */
+        
+        /* --- 左侧控制侧边栏 --- */
+        .sidebar {
+            width: 380px; min-width: 380px; height: 100vh; background: #ffffff;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.2); z-index: 10;
+            display: flex; flex-direction: column;
+        }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid #eee; background: #f8f9fa; display: flex; align-items: center; justify-content: space-between; }
+        .sidebar-header h2 { font-size: 18px; color: #333; margin: 0; }
+        .sidebar-header .toggle-settings-btn { padding: 6px 12px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; transition: 0.2s; }
+        .sidebar-header .toggle-settings-btn:hover { background: #5a6268; }
+        .sidebar-header .toggle-settings-btn.collapsed { background: #28a745; }
+        .sidebar-header .toggle-settings-btn.collapsed:hover { background: #218838; }
+        
+        /* 动作按钮组 */
+        .action-group { display: flex; gap: 8px; margin-bottom: 10px; }
+        .btn { flex: 1; padding: 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s;}
+        .btn-primary { background: #4285f4; color: white; }
+        .btn-primary:hover { background: #3367d6; }
+        .btn-success { background: #34a853; color: white; }
+        .btn-success:hover { background: #2b8b45; }
+        .btn-warning { background: #fbbc04; color: #333; }
+        .btn-danger { background: #ea4335; color: white; }
+        .btn-danger:hover { background: #d33426; }
+        .btn-print { background: var(--color-theme); color: white; padding: 12px; font-size: 15px; margin-top: 5px;}
+        
+        /* 数据输入区 */
+        .data-input-area { padding: 15px 20px; border-bottom: 1px solid #eee; }
+        .file-upload { width: 100%; padding: 8px; border: 1px dashed #ccc; background: #fafafa; border-radius: 4px; margin-bottom: 10px; font-size: 12px;}
+        .encoding-sel { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;}
+
+        /* 设置滚动区 */
+        .settings-scroll { flex: 1; overflow-y: auto; padding: 20px; transition: max-height 0.3s ease, opacity 0.3s ease; }
+        .settings-scroll.collapsed { max-height: 0; overflow: hidden; opacity: 0; padding: 0 20px; }
+        .settings-scroll.collapsed * { display: none; }
+        .setting-group { margin-bottom: 25px; }
+        .setting-group h3 { font-size: 14px; color: #666; margin-bottom: 12px; padding-bottom: 5px; border-bottom: 1px solid #eee; }
+
+        /* 设置面板顶部的操作按钮 */
+        .settings-actions { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #ddd; }
+
+        /* 打印按钮区域 - 不随设置面板收起 */
+        .print-button-area { padding: 15px 20px; border-bottom: 1px solid #eee; background: #f8f9fa; }
+        
+        /* 设置项表单 */
+        .form-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 12px; }
+        .form-row label { width: 45%; color: #555; }
+        .form-row .input-wrapper { width: 50%; position: relative; display: flex; align-items: center; }
+        .form-row input[type="text"], .form-row input[type="number"] { width: 100%; padding: 5px; border: 1px solid #ccc; border-radius: 3px; font-family: monospace; text-align: right; }
+        .form-row input[type="number"] { appearance: textfield; -webkit-appearance: textfield; -moz-appearance: textfield; }
+        .form-row input[type="number"]::-webkit-inner-spin-button,
+        .form-row input[type="number"]::-webkit-outer-spin-button { opacity: 1; height: 20px; }
+        .form-row input[type="color"] { width: 100%; height: 26px; padding: 0; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; }
+        .form-row .spin-wrapper { width: 50%; display: flex; align-items: center; position: relative; }
+        .form-row .spin-wrapper input { width: 100%; padding-right: 50px; }
+        .form-row .spin-btn { position: absolute; right: 0; top: 0; height: 100%; width: 22px; display: flex; flex-direction: column; border-left: 1px solid #ccc; }
+        .form-row .spin-btn button { flex: 1; border: none; background: #f0f0f0; cursor: pointer; font-size: 10px; line-height: 1; }
+        .form-row .spin-btn button:hover { background: #e0e0e0; }
+        .form-row .spin-btn button:first-child { border-radius: 0 3px 0 0; }
+        .form-row .spin-btn button:last-child { border-radius: 0 0 3px 0; }
+
+        /* --- 右侧 PDF 预览主区域 --- */
+        .preview-area {
+            flex: 1; height: 100vh; overflow-y: auto; padding: 40px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* ========================================================
+           A4 纸张与账单核心样式 (受 CSS 变量严格控制)
+           ======================================================== */
+        .page {
+            width: 794px;         /* 标准 A4 宽度 (96dpi) */
+            height: 1123px;       /* 标准 A4 高度 (96dpi) */
+            background: white;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+            position: relative;   /* 相对定位，供绝对定位的页脚参考 */
+            overflow: hidden; 
+            page-break-after: always;
+            flex-shrink: 0;
+        }
+
+        /* 页面内容容器 */
+        .page-content {
+            padding: var(--page-pad-top) var(--page-pad-right) 0 var(--page-pad-left);
+            width: 100%;
+        }
+
+        /* 信息区域 */
+        .info-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: var(--space-header-bottom);
+            font-size: 12px;
+        }
+
+        /* --- Logo 区域 --- */
+        .header-logo {
+            font-size: var(--logo-size);
+            font-weight: var(--logo-font-weight);
+            color: var(--logo-color);
+            line-height: var(--logo-line-height);
+            letter-spacing: var(--logo-letter-spacing);
+            margin-bottom: var(--space-header-bottom);
+            margin-top: var(--logo-offset-y);
+            margin-left: var(--logo-offset-x);
+            display: flex;
+            align-items: center;
+        }
+
+        /* --- 页面标题 --- */
+        .page-title {
+            font-size: var(--title-main-size);
+            font-weight: var(--title-main-weight);
+            color: var(--title-main-color);
+            line-height: var(--title-main-line-height);
+            letter-spacing: var(--title-main-letter-spacing);
+            margin-bottom: 5px;
+            margin-left: var(--title-main-offset-x);
+            margin-top: var(--title-main-offset-y);
+        }
+
+        /* --- 账号日期标签 --- */
+        .account-date-label {
+            display: inline;
+            font-size: var(--date-account-label-size);
+            color: var(--date-account-label-color);
+            line-height: var(--date-account-label-line-height);
+            letter-spacing: var(--date-account-label-letter-spacing);
+            margin-left: var(--date-account-label-offset-x);
+            position: relative;
+            top: var(--date-account-label-offset-y);
+        }
+
+        /* --- 账号日期值 --- */
+        .account-date-value {
+            display: inline;
+            font-size: var(--date-account-value-size);
+            color: var(--date-account-value-color);
+            line-height: var(--date-account-value-line-height);
+            letter-spacing: var(--date-account-value-letter-spacing);
+            margin-left: var(--date-account-value-offset-x);
+            position: relative;
+            top: var(--date-account-value-offset-y);
+        }
+
+        /* --- 客户区块 --- */
+        .customer-info {
+            width: 60%;
+            color: #555;
+            font-size: 12px;
+            line-height: 1.8;
+        }
+        .customer-info .cust-name {
+            font-size: var(--cust-name-size);
+            color: var(--cust-name-color);
+            font-weight: var(--cust-name-font-weight);
+            line-height: var(--cust-name-line-height);
+            letter-spacing: var(--cust-name-letter-spacing);
+            margin-left: var(--cust-name-offset-x);
+            position: relative;
+            top: var(--cust-name-offset-y);
+        }
+        .customer-info .cust-addr {
+            font-size: var(--cust-addr-size);
+            color: var(--cust-addr-color);
+            line-height: var(--cust-addr-line-height);
+            letter-spacing: var(--cust-addr-spacing);
+            margin-left: var(--cust-addr-offset-x);
+            position: relative;
+            top: var(--cust-addr-offset-y);
+        }
+        .customer-info .cust-region {
+            font-size: var(--cust-region-size);
+            color: var(--cust-region-color);
+            line-height: var(--cust-region-line-height);
+            letter-spacing: var(--cust-region-letter-spacing);
+            margin-left: var(--cust-region-offset-x);
+            position: relative;
+            top: var(--cust-region-offset-y);
+        }
+        .customer-info .cust-region-1 {
+            font-size: var(--cust-region-1-size);
+            color: var(--cust-region-1-color);
+            line-height: var(--cust-region-1-line-height);
+            letter-spacing: var(--cust-region-1-letter-spacing);
+            margin-left: var(--cust-region-1-offset-x);
+            position: relative;
+            top: var(--cust-region-1-offset-y);
+        }
+        .customer-info .cust-region-2 {
+            font-size: var(--cust-region-2-size);
+            color: var(--cust-region-2-color);
+            line-height: var(--cust-region-2-line-height);
+            letter-spacing: var(--cust-region-2-letter-spacing);
+            margin-left: var(--cust-region-2-offset-x);
+            position: relative;
+            top: var(--cust-region-2-offset-y);
+        }
+        .customer-info .cust-region-3 {
+            font-size: var(--cust-region-3-size);
+            color: var(--cust-region-3-color);
+            line-height: var(--cust-region-3-line-height);
+            letter-spacing: var(--cust-region-3-letter-spacing);
+            margin-left: var(--cust-region-3-offset-x);
+            position: relative;
+            top: var(--cust-region-3-offset-y);
+        }
+
+        /* --- 联系信息区块 --- */
+        .contact-info {
+            width: 35%;
+            text-align: right;
+            line-height: 1.8;
+            margin-left: var(--contact-info-offset-x);
+            position: relative;
+            top: var(--contact-info-offset-y);
+        }
+        .contact-info .title {
+            font-size: var(--contact-title-size);
+            font-weight: var(--contact-title-weight);
+            color: var(--contact-title-color);
+            line-height: var(--contact-title-line-height);
+            letter-spacing: var(--contact-title-letter-spacing);
+            margin-left: var(--contact-title-offset-x);
+            position: relative;
+            top: var(--contact-title-offset-y);
+        }
+        .contact-info .detail {
+            font-size: var(--contact-detail-size);
+            color: var(--contact-detail-color);
+            line-height: var(--contact-detail-line-height);
+            letter-spacing: var(--contact-detail-letter-spacing);
+            margin-left: var(--contact-detail-offset-x);
+            position: relative;
+            top: var(--contact-detail-offset-y);
+        }
+
+        /* --- 筛选范围标签 --- */
+        .filter-label {
+            display: inline;
+            font-size: var(--filter-label-size);
+            font-weight: var(--filter-label-weight);
+            color: var(--filter-label-color);
+            line-height: var(--filter-label-line-height);
+            letter-spacing: var(--filter-label-letter-spacing);
+            margin-left: var(--filter-label-offset-x);
+            position: relative;
+            top: var(--filter-label-offset-y);
+        }
+
+        /* --- 筛选范围值 --- */
+        .filter-value {
+            display: inline;
+            font-size: var(--filter-value-size);
+            font-weight: var(--filter-value-weight);
+            color: var(--filter-value-color);
+            line-height: var(--filter-value-line-height);
+            letter-spacing: var(--filter-value-letter-spacing);
+            margin-left: var(--filter-value-offset-x);
+            position: relative;
+            top: var(--filter-value-offset-y);
+        }
+
+        /* --- 表格标题 --- */
+        .table-title {
+            font-size: var(--table-title-size);
+            font-weight: var(--table-title-weight);
+            color: var(--table-title-color);
+            background-color: var(--table-title-bg);
+            width: var(--table-title-width);
+            height: var(--table-title-height);
+            padding: var(--table-title-pad-y) var(--table-title-pad-x);
+            margin-left: calc(-5px + var(--table-title-offset-x));
+            margin-top: var(--table-title-offset-y);
+            margin-bottom: var(--space-title-table);
+            letter-spacing: var(--table-title-spacing);
+            display: inline-block;
+        }
+
+        /* --- 表格区域 --- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        /* --- 表头通用样式 --- */
+        thead {
+            position: relative;
+        }
+        thead::after {
+            content: '';
+            position: absolute;
+            left: calc(50% - var(--th-border-length) / 2);
+            width: var(--th-border-length);
+            bottom: var(--th-border-offset);
+            height: var(--th-border-width);
+            background: var(--th-border-color);
+        }
+
+        /* --- 表头单元格 --- */
+        th.th-item {
+            font-size: var(--th-size);
+            font-weight: var(--th-weight);
+            color: var(--th-color);
+            padding: 8px 5px;
+            transform: translate(var(--th-offset-x), var(--th-offset-y));
+            border-bottom: none;
+        }
+
+        th.col-date {
+            font-size: var(--th-date-size);
+            color: var(--th-date-color);
+            transform: translate(var(--th-date-offset-x), var(--th-date-offset-y));
+        }
+        th.col-desc {
+            font-size: var(--th-desc-size);
+            color: var(--th-desc-color);
+            transform: translate(var(--th-desc-offset-x), var(--th-desc-offset-y));
+        }
+        th.col-in {
+            font-size: var(--th-in-size);
+            color: var(--th-in-color);
+            transform: translate(var(--th-in-offset-x), var(--th-in-offset-y));
+        }
+        th.col-out {
+            font-size: var(--th-out-size);
+            color: var(--th-out-color);
+            transform: translate(var(--th-out-offset-x), var(--th-out-offset-y));
+        }
+        th.col-bal {
+            font-size: var(--th-bal-size);
+            color: var(--th-bal-color);
+            transform: translate(var(--th-bal-offset-x), var(--th-bal-offset-y));
+        }
+
+        /* --- 单元格样式 --- */
+        td {
+            font-size: var(--font-td, 12px);
+            color: var(--color-text-main);
+            vertical-align: top;
+            padding-top: var(--td-padding-top);
+            padding-bottom: var(--td-padding-bottom);
+            line-height: var(--td-line-height);
+        }
+
+        tbody {
+            transform: translateY(var(--tbody-offset-y));
+        }
+        tbody tr {
+            position: relative;
+        }
+        tbody tr::after {
+            content: '';
+            position: absolute;
+            left: calc(50% - var(--th-border-length) / 2);
+            width: var(--th-border-length);
+            bottom: 0;
+            height: 2px;
+            background: var(--color-border);
+        }
+
+        td.col-date {
+            font-size: var(--td-date-size);
+            color: var(--td-date-color);
+            transform: translate(var(--td-date-offset-x), var(--td-date-offset-y));
+        }
+        td.col-desc {
+            font-size: var(--td-desc-size);
+            color: var(--td-desc-color);
+            transform: translate(var(--td-desc-offset-x), var(--td-desc-offset-y));
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+        td.col-in {
+            font-size: var(--td-in-size);
+            color: var(--td-in-color);
+            transform: translate(var(--td-in-offset-x), var(--td-in-offset-y));
+        }
+        td.col-out {
+            font-size: var(--td-out-size);
+            color: var(--td-out-color);
+            transform: translate(var(--td-out-offset-x), var(--td-out-offset-y));
+        }
+        td.col-bal {
+            font-size: var(--td-bal-size);
+            color: var(--td-bal-color);
+            transform: translate(var(--td-bal-offset-x), var(--td-bal-offset-y));
+        }
+
+        /* --- 列宽设置 --- */
+        .col-date { width: var(--col-date-width); text-align: left; padding-left: 0; }
+        .col-desc { width: var(--col-desc-width); text-align: left; }
+        .col-in { width: var(--col-in-width); text-align: left; }
+        .col-out { width: var(--col-out-width); text-align: left; }
+        .col-bal { width: var(--col-bal-width); text-align: left; }
+
+        /* --- 页脚区域 --- */
+        .footer {
+            position: absolute;
+            bottom: 13mm;
+            left: 13mm;
+            right: 13mm;
+            padding-top: 10px;
+            font-size: var(--footer-left-size);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .footer-border {
+            position: absolute;
+            left: calc(50% - var(--footer-border-length) / 2);
+            top: calc(-1 * var(--footer-border-width) + var(--footer-border-offset-y));
+            width: var(--footer-border-length);
+            height: var(--footer-border-width);
+            background: var(--footer-border-color);
+            margin-left: var(--footer-border-offset-x);
+        }
+
+        .footer-left {
+            width: var(--footer-border-length);
+            margin: 0 auto;
+            font-size: var(--footer-left-size);
+            font-family: 'PingFang-Medium';
+            color: var(--footer-left-color);
+            line-height: var(--footer-left-line-height);
+            letter-spacing: var(--footer-left-letter-spacing);
+            margin-left: var(--footer-left-offset-x);
+            position: relative;
+            top: var(--footer-left-offset-y);
+        }
+
+        .footer-content {
+            width: var(--footer-border-length);
+            margin: 0 auto;
+        }
+
+        .footer-right {
+            width: auto;
+            text-align: right;
+            position: absolute;
+            right: var(--footer-right-offset-x);
+            bottom: 0;
+            font-size: var(--footer-right-size);
+            font-family: 'PingFang-Medium';
+            font-weight: var(--footer-right-weight);
+            color: var(--footer-right-color);
+            top: var(--footer-right-offset-y);
+        }
+
+        .website-link {
+            display: block;
+            font-size: var(--footer-link-size);
+            font-family: 'PingFang-Medium';
+            color: var(--footer-link-color);
+            margin-left: var(--footer-link-offset-x);
+            position: relative;
+            top: var(--footer-link-offset-y);
+            letter-spacing: var(--footer-link-letter-spacing);
+            text-decoration: none;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        /* ========================================================
+           打印专用样式：只打印页面，隐藏系统UI，去除边距
+           ======================================================== */
+        @media print {
+            html, body { overflow: visible; height: auto; }
+            body { display: block; background: #fff; }
+            .sidebar { display: none !important; }
+            .preview-area { padding: 0; overflow: visible; height: auto; display: block; }
+            .page { box-shadow: none; border: none; page-break-after: auto; page-break-before: auto; }
+            table, .contact-info, .customer-info, .table-title { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            thead::after, tbody tr::after, .footer-border { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .website-link { text-decoration: none !important; color: inherit !important; cursor: default !important; pointer-events: none !important; }
+            @page { size: A4; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 左侧控制台 -->
+    <aside class="sidebar no-print">
+        <div class="sidebar-header">
+            <h2>⚙️ 账单排版设计器</h2>
+            <button class="toggle-settings-btn" id="toggleSettingsBtn" onclick="toggleSettingsPanel()">收起设置</button>
+        </div>
+
+        <div class="data-input-area">
+            <input type="file" id="csvFileInput" class="file-upload" accept=".csv" />
+            <select id="encodingSelect" class="encoding-sel">
+                <option value="gbk">数据乱码？切换至 GBK 编码 (Excel默认)</option>
+                <option value="utf-8">数据乱码？切换至 UTF-8 编码</option>
+            </select>
+        </div>
+
+        <div class="print-button-area">
+            <button class="btn btn-print btn-primary" onclick="window.print()">🖨️ 打印 / 导出 PDF</button>
+        </div>
+
+        <div class="settings-scroll" id="settingsPanel">
+            <div class="settings-actions">
+                <div class="action-group">
+                    <button class="btn btn-success" onclick="saveSettings()">💾 保存</button>
+                    <button class="btn btn-warning" onclick="resetSettings()">🔄 重置</button>
+                    <button class="btn btn-danger" onclick="clearBrowserCache()">🗑️ 清除缓存</button>
+                </div>
+                <div class="action-group">
+                    <button class="btn btn-primary" onclick="exportSettingsToFile()">📤 导出配置</button>
+                    <button class="btn btn-primary" onclick="importSettingsFromFile()">📥 导入配置</button>
+                </div>
+            </div>
+
+            <!-- [A1] 全局颜色 -->
+            <div class="setting-group" data-group="A1">
+                <h3>🎨 全局颜色</h3>
+                <div class="form-row"><label>主题色</label><input type="color" data-var="--color-theme" value="#E6004F"></div>
+                <div class="form-row"><label>主文本色</label><input type="color" data-var="--color-text-main" value="#333333"></div>
+                <div class="form-row"><label>次文本色</label><input type="color" data-var="--color-text-sub" value="#555555"></div>
+                <div class="form-row"><label>表格背景色</label><input type="color" data-var="--color-table-bg" value="#f4f7fb"></div>
+                <div class="form-row"><label>边框色</label><input type="color" data-var="--color-border" value="#8C8C8C"></div>
+            </div>
+
+            <!-- [A2] Logo 区域 -->
+            <div class="setting-group" data-group="A2">
+                <h3>🖼️ Logo 区域</h3>
+                <div class="form-row"><label>Logo 字号</label><div class="spin-wrapper"><input type="text" data-var="--logo-size" value="36px"></div></div>
+                <div class="form-row"><label>Logo 高度</label><div class="spin-wrapper"><input type="text" data-var="--logo-height" value="27.5px"></div></div>
+                <div class="form-row"><label>Logo 颜色</label><input type="color" data-var="--logo-color" value="#E6004F"></div>
+                <div class="form-row"><label>左右偏移 X</label><div class="spin-wrapper"><input type="text" data-var="--logo-offset-x" value="-3px"></div></div>
+                <div class="form-row"><label>上下偏移 Y</label><div class="spin-wrapper"><input type="text" data-var="--logo-offset-y" value="-13px"></div></div>
+                <div class="form-row"><label>行高</label><div class="spin-wrapper"><input type="text" data-var="--logo-line-height" value="1"></div></div>
+                <div class="form-row"><label>字间距</label><div class="spin-wrapper"><input type="text" data-var="--logo-letter-spacing" value="0px"></div></div>
+                <div class="form-row"><label>字重</label><div class="spin-wrapper"><input type="text" data-var="--logo-font-weight" value="900"></div></div>
+            </div>
+
+            <!-- [A3] 页面标题 -->
+            <div class="setting-group" data-group="A3">
+                <h3>📝 页面标题</h3>
+                <div class="form-row"><label>标题字号</label><div class="spin-wrapper"><input type="text" data-var="--title-main-size" value="21px"></div></div>
+                <div class="form-row"><label>标题颜色</label><input type="color" data-var="--title-main-color" value="#333333"></div>
+                <div class="form-row"><label>左右偏移 X</label><div class="spin-wrapper"><input type="text" data-var="--title-main-offset-x" value="-5px"></div></div>
+                <div class="form-row"><label>上下偏移 Y</label><div class="spin-wrapper"><input type="text" data-var="--title-main-offset-y" value="-2px"></div></div>
+                <div class="form-row"><label>行高</label><div class="spin-wrapper"><input type="text" data-var="--title-main-line-height" value="1.2"></div></div>
+                <div class="form-row"><label>字间距</label><div class="spin-wrapper"><input type="text" data-var="--title-main-letter-spacing" value="0px"></div></div>
+            </div>
+
+            <!-- [A4] 账号日期 -->
+            <div class="setting-group" data-group="A4">
+                <h3>📅 账号日期</h3>
+                <div class="form-row"><label>标签字号</label><div class="spin-wrapper"><input type="text" data-var="--date-account-label-size" value="13px"></div></div>
+                <div class="form-row"><label>标签颜色</label><input type="color" data-var="--date-account-label-color" value="#888888"></div>
+                <div class="form-row"><label>标签左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--date-account-label-offset-x" value="-4px"></div></div>
+                <div class="form-row"><label>标签上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--date-account-label-offset-y" value="-3px"></div></div>
+                <div class="form-row"><label>标签行高</label><div class="spin-wrapper"><input type="text" data-var="--date-account-label-line-height" value="1.5"></div></div>
+                <div class="form-row"><label>标签字间距</label><div class="spin-wrapper"><input type="text" data-var="--date-account-label-letter-spacing" value="0px"></div></div>
+                <div class="form-row"><label>日期字号</label><div class="spin-wrapper"><input type="text" data-var="--date-account-value-size" value="13px"></div></div>
+                <div class="form-row"><label>日期颜色</label><input type="color" data-var="--date-account-value-color" value="#888888"></div>
+                <div class="form-row"><label>日期左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--date-account-value-offset-x" value="0px"></div></div>
+                <div class="form-row"><label>日期上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--date-account-value-offset-y" value="-3px"></div></div>
+                <div class="form-row"><label>日期行高</label><div class="spin-wrapper"><input type="text" data-var="--date-account-value-line-height" value="1.5"></div></div>
+                <div class="form-row"><label>日期字间距</label><div class="spin-wrapper"><input type="text" data-var="--date-account-value-letter-spacing" value="0px"></div></div>
+            </div>
+
+            <!-- [A5] 客户区块 -->
+            <div class="setting-group" data-group="A5">
+                <h3>👤 客户区块</h3>
+                <div class="form-row"><label>客户姓名字号</label><div class="spin-wrapper"><input type="text" data-var="--cust-name-size" value="13px"></div></div>
+                <div class="form-row"><label>客户姓名颜色</label><input type="color" data-var="--cust-name-color" value="#333333"></div>
+                <div class="form-row"><label>姓名左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--cust-name-offset-x" value="-3px"></div></div>
+                <div class="form-row"><label>姓名上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--cust-name-offset-y" value="-3px"></div></div>
+                <div class="form-row"><label>姓名行高</label><div class="spin-wrapper"><input type="text" data-var="--cust-name-line-height" value="2"></div></div>
+                <div class="form-row"><label>姓名字间距</label><div class="spin-wrapper"><input type="text" data-var="--cust-name-letter-spacing" value="0.1px"></div></div>
+                <div class="form-row"><label>姓名字重</label><div class="spin-wrapper"><input type="text" data-var="--cust-name-font-weight" value="normal"></div></div>
+                <div class="form-row"><label>地址字号</label><div class="spin-wrapper"><input type="text" data-var="--cust-addr-size" value="13px"></div></div>
+                <div class="form-row"><label>地址颜色</label><input type="color" data-var="--cust-addr-color" value="#555555"></div>
+                <div class="form-row"><label>地址左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--cust-addr-offset-x" value="-3px"></div></div>
+                <div class="form-row"><label>地址上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--cust-addr-offset-y" value="4px"></div></div>
+                <div class="form-row"><label>地址字间距</label><div class="spin-wrapper"><input type="text" data-var="--cust-addr-spacing" value="0.3px"></div></div>
+                <div class="form-row"><label>地址行高</label><div class="spin-wrapper"><input type="text" data-var="--cust-addr-line-height" value="1.0"></div></div>
+                <div class="form-row"><label>地区字号</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-size" value="13px"></div></div>
+                <div class="form-row"><label>地区颜色</label><input type="color" data-var="--cust-region-color" value="#555555"></div>
+                <div class="form-row"><label>地区左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-offset-x" value="-7px"></div></div>
+                <div class="form-row"><label>地区上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-offset-y" value="1px"></div></div>
+                <div class="form-row"><label>地区行高</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-line-height" value="3.5"></div></div>
+                <div class="form-row"><label>地区字间距</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-letter-spacing" value="0.3px"></div></div>
+            </div>
+
+            <!-- [A5-1] 地区1 -->
+            <div class="setting-group" data-group="A5-1">
+                <h3>🌆 地区1（香港）</h3>
+                <div class="form-row"><label>字号</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-1-size" value="13px"></div></div>
+                <div class="form-row"><label>颜色</label><input type="color" data-var="--cust-region-1-color" value="#555555"></div>
+                <div class="form-row"><label>左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-1-offset-x" value="-3px"></div></div>
+                <div class="form-row"><label>上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-1-offset-y" value="4px"></div></div>
+                <div class="form-row"><label>行高</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-1-line-height" value="2.5"></div></div>
+                <div class="form-row"><label>字间距</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-1-letter-spacing" value="0.3px"></div></div>
+            </div>
+
+            <!-- [A5-2] 地区2 -->
+            <div class="setting-group" data-group="A5-2">
+                <h3>🏙️ 地区2（香港）</h3>
+                <div class="form-row"><label>字号</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-2-size" value="13px"></div></div>
+                <div class="form-row"><label>颜色</label><input type="color" data-var="--cust-region-2-color" value="#555555"></div>
+                <div class="form-row"><label>左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-2-offset-x" value="-3px"></div></div>
+                <div class="form-row"><label>上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-2-offset-y" value="-3px"></div></div>
+                <div class="form-row"><label>行高</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-2-line-height" value="2"></div></div>
+                <div class="form-row"><label>字间距</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-2-letter-spacing" value="0.3px"></div></div>
+            </div>
+
+            <!-- [A5-3] 地区3 -->
+            <div class="setting-group" data-group="A5-3">
+                <h3>🌃 地区3（中国香港）</h3>
+                <div class="form-row"><label>字号</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-3-size" value="13px"></div></div>
+                <div class="form-row"><label>颜色</label><input type="color" data-var="--cust-region-3-color" value="#555555"></div>
+                <div class="form-row"><label>左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-3-offset-x" value="-3px"></div></div>
+                <div class="form-row"><label>上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-3-offset-y" value="1px"></div></div>
+                <div class="form-row"><label>行高</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-3-line-height" value="2"></div></div>
+                <div class="form-row"><label>字间距</label><div class="spin-wrapper"><input type="text" data-var="--cust-region-3-letter-spacing" value="0.3px"></div></div>
+            </div>
+
+            <!-- [A6] 联系信息 -->
+            <div class="setting-group" data-group="A6">
+                <h3>📞 联系信息</h3>
+                <div class="form-row"><label>区块左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--contact-info-offset-x" value="0px"></div></div>
+                <div class="form-row"><label>区块上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--contact-info-offset-y" value="0px"></div></div>
+                <div class="form-row"><label>标题字号</label><div class="spin-wrapper"><input type="text" data-var="--contact-title-size" value="12px"></div></div>
+                <div class="form-row"><label>标题颜色</label><input type="color" data-var="--contact-title-color" value="#4285f4"></div>
+                <div class="form-row"><label>标题左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--contact-title-offset-x" value="0px"></div></div>
+                <div class="form-row"><label>标题上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--contact-title-offset-y" value="21px"></div></div>
+                <div class="form-row"><label>标题行高</label><div class="spin-wrapper"><input type="text" data-var="--contact-title-line-height" value="2"></div></div>
+                <div class="form-row"><label>标题字间距</label><div class="spin-wrapper"><input type="text" data-var="--contact-title-letter-spacing" value="0px"></div></div>
+                <div class="form-row"><label>详情字号</label><div class="spin-wrapper"><input type="text" data-var="--contact-detail-size" value="12px"></div></div>
+                <div class="form-row"><label>详情颜色</label><input type="color" data-var="--contact-detail-color" value="#8ab4f8"></div>
+                <div class="form-row"><label>详情左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--contact-detail-offset-x" value="0px"></div></div>
+                <div class="form-row"><label>详情上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--contact-detail-offset-y" value="-1px"></div></div>
+                <div class="form-row"><label>详情行高</label><div class="spin-wrapper"><input type="text" data-var="--contact-detail-line-height" value="2"></div></div>
+                <div class="form-row"><label>详情字间距</label><div class="spin-wrapper"><input type="text" data-var="--contact-detail-letter-spacing" value="0px"></div></div>
+            </div>
+
+            <!-- [A7] 筛选范围 -->
+            <div class="setting-group" data-group="A7">
+                <h3>🔍 筛选范围</h3>
+                <div class="form-row"><label>标签字号</label><div class="spin-wrapper"><input type="text" data-var="--filter-label-size" value="15px"></div></div>
+                <div class="form-row"><label>标签颜色</label><input type="color" data-var="--filter-label-color" value="#333333"></div>
+                <div class="form-row"><label>标签字重</label><div class="spin-wrapper"><input type="text" data-var="--filter-label-weight" value="bold"></div></div>
+                <div class="form-row"><label>标签左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--filter-label-offset-x" value="-4px"></div></div>
+                <div class="form-row"><label>标签上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--filter-label-offset-y" value="26px"></div></div>
+                <div class="form-row"><label>标签行高</label><div class="spin-wrapper"><input type="text" data-var="--filter-label-line-height" value="1"></div></div>
+                <div class="form-row"><label>标签字间距</label><div class="spin-wrapper"><input type="text" data-var="--filter-label-letter-spacing" value="0px"></div></div>
+                <div class="form-row"><label>日期字号</label><div class="spin-wrapper"><input type="text" data-var="--filter-value-size" value="15px"></div></div>
+                <div class="form-row"><label>日期颜色</label><input type="color" data-var="--filter-value-color" value="#333333"></div>
+                <div class="form-row"><label>日期字重</label><div class="spin-wrapper"><input type="text" data-var="--filter-value-weight" value="bold"></div></div>
+                <div class="form-row"><label>日期左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--filter-value-offset-x" value="0px"></div></div>
+                <div class="form-row"><label>日期上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--filter-value-offset-y" value="26px"></div></div>
+                <div class="form-row"><label>日期行高</label><div class="spin-wrapper"><input type="text" data-var="--filter-value-line-height" value="1"></div></div>
+                <div class="form-row"><label>日期字间距</label><div class="spin-wrapper"><input type="text" data-var="--filter-value-letter-spacing" value="0px"></div></div>
+            </div>
+
+            <!-- [A8] 表格标题 -->
+            <div class="setting-group" data-group="A8">
+                <h3>📊 表格标题</h3>
+                <div class="form-row"><label>标题字号</label><div class="spin-wrapper"><input type="text" data-var="--table-title-size" value="15px"></div></div>
+                <div class="form-row"><label>标题颜色</label><input type="color" data-var="--table-title-color" value="#333333"></div>
+                <div class="form-row"><label>标题背景色</label><input type="color" data-var="--table-title-bg" value="#f3f6fe"></div>
+                <div class="form-row"><label>左右偏移 X</label><div class="spin-wrapper"><input type="text" data-var="--table-title-offset-x" value="-3px"></div></div>
+                <div class="form-row"><label>上下偏移 Y</label><div class="spin-wrapper"><input type="text" data-var="--table-title-offset-y" value="10px"></div></div>
+                <div class="form-row"><label>字间距</label><div class="spin-wrapper"><input type="text" data-var="--table-title-spacing" value="0px"></div></div>
+                <div class="form-row"><label>宽度</label><div class="spin-wrapper"><input type="text" data-var="--table-title-width" value="697px"></div></div>
+                <div class="form-row"><label>高度</label><div class="spin-wrapper"><input type="text" data-var="--table-title-height" value="27px"></div></div>
+                <div class="form-row"><label>水平内边距</label><div class="spin-wrapper"><input type="text" data-var="--table-title-pad-x" value="4px"></div></div>
+                <div class="form-row"><label>垂直内边距</label><div class="spin-wrapper"><input type="text" data-var="--table-title-pad-y" value="3px"></div></div>
+            </div>
+
+            <!-- [B1-B6] 表头样式 -->
+            <div class="setting-group" data-group="B">
+                <h3>📋 表头样式</h3>
+                <div class="form-row"><label>通用字号</label><div class="spin-wrapper"><input type="text" data-var="--th-size" value="14px"></div></div>
+                <div class="form-row"><label>通用颜色</label><input type="color" data-var="--th-color" value="#333333"></div>
+                <div class="form-row"><label>通用左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--th-offset-x" value="-10px"></div></div>
+                <div class="form-row"><label>通用上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--th-offset-y" value="-10px"></div></div>
+            </div>
+
+            <!-- [B2] 表头 - 日期列 -->
+            <div class="setting-group" data-group="B2">
+                <h3>📆 表头 - 日期列</h3>
+                <div class="form-row"><label>日期列字号</label><div class="spin-wrapper"><input type="text" data-var="--th-date-size" value="14px"></div></div>
+                <div class="form-row"><label>日期列颜色</label><input type="color" data-var="--th-date-color" value="#333333"></div>
+                <div class="form-row"><label>日期左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--th-date-offset-x" value="-10px"></div></div>
+                <div class="form-row"><label>日期上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--th-date-offset-y" value="-9px"></div></div>
+            </div>
+
+            <!-- [B3] 表头 - 描述列 -->
+            <div class="setting-group" data-group="B3">
+                <h3>📝 表头 - 描述列</h3>
+                <div class="form-row"><label>描述列字号</label><div class="spin-wrapper"><input type="text" data-var="--th-desc-size" value="14px"></div></div>
+                <div class="form-row"><label>描述列颜色</label><input type="color" data-var="--th-desc-color" value="#333333"></div>
+                <div class="form-row"><label>描述左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--th-desc-offset-x" value="32px"></div></div>
+                <div class="form-row"><label>描述上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--th-desc-offset-y" value="-9px"></div></div>
+            </div>
+
+            <!-- [B4] 表头 - 入账列 -->
+            <div class="setting-group" data-group="B4">
+                <h3>⬆️ 表头 - 入账列</h3>
+                <div class="form-row"><label>入账列字号</label><div class="spin-wrapper"><input type="text" data-var="--th-in-size" value="14px"></div></div>
+                <div class="form-row"><label>入账列颜色</label><input type="color" data-var="--th-in-color" value="#333333"></div>
+                <div class="form-row"><label>入账左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--th-in-offset-x" value="-25px"></div></div>
+                <div class="form-row"><label>入账上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--th-in-offset-y" value="-9px"></div></div>
+            </div>
+
+            <!-- [B5] 表头 - 出账列 -->
+            <div class="setting-group" data-group="B5">
+                <h3>⬇️ 表头 - 出账列</h3>
+                <div class="form-row"><label>出账列字号</label><div class="spin-wrapper"><input type="text" data-var="--th-out-size" value="14px"></div></div>
+                <div class="form-row"><label>出账列颜色</label><input type="color" data-var="--th-out-color" value="#333333"></div>
+                <div class="form-row"><label>出账左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--th-out-offset-x" value="-3px"></div></div>
+                <div class="form-row"><label>出账上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--th-out-offset-y" value="-9px"></div></div>
+            </div>
+
+            <!-- [B6] 表头 - 余额列 -->
+            <div class="setting-group" data-group="B6">
+                <h3>💰 表头 - 余额列</h3>
+                <div class="form-row"><label>余额列字号</label><div class="spin-wrapper"><input type="text" data-var="--th-bal-size" value="14px"></div></div>
+                <div class="form-row"><label>余额列颜色</label><input type="color" data-var="--th-bal-color" value="#333333"></div>
+                <div class="form-row"><label>余额左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--th-bal-offset-x" value="19px"></div></div>
+                <div class="form-row"><label>余额上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--th-bal-offset-y" value="-9px"></div></div>
+            </div>
+
+            <!-- [B7] 表头分割线 -->
+            <div class="setting-group" data-group="B7">
+                <h3>➖ 表头分割线</h3>
+                <div class="form-row"><label>线条粗细</label><div class="spin-wrapper"><input type="text" data-var="--th-border-width" value="2px"></div></div>
+                <div class="form-row"><label>线条颜色</label><input type="color" data-var="--th-border-color" value="#8C8C8C"></div>
+                <div class="form-row"><label>线条长度</label><div class="spin-wrapper"><input type="text" data-var="--th-border-length" value="699px"></div></div>
+                <div class="form-row"><label>线条位置偏移</label><div class="spin-wrapper"><input type="text" data-var="--th-border-offset" value="10px"></div></div>
+            </div>
+
+            <!-- [C] 单元格样式 -->
+            <div class="setting-group" data-group="C">
+                <h3>📄 单元格通用</h3>
+                <div class="form-row"><label>行高</label><div class="spin-wrapper"><input type="text" data-var="--td-line-height" value="2"></div></div>
+                <div class="form-row"><label>上内边距</label><div class="spin-wrapper"><input type="text" data-var="--td-padding-top" value="5px"></div></div>
+                <div class="form-row"><label>下内边距</label><div class="spin-wrapper"><input type="text" data-var="--td-padding-bottom" value="5px"></div></div>
+                <div class="form-row"><label>列表整体偏移</label><div class="spin-wrapper"><input type="text" data-var="--tbody-offset-y" value="-15px"></div></div>
+            </div>
+
+            <!-- [C1] 单元格 - 日期列 -->
+            <div class="setting-group" data-group="C1">
+                <h3>📆 单元格 - 日期列</h3>
+                <div class="form-row"><label>日期列字号</label><div class="spin-wrapper"><input type="text" data-var="--td-date-size" value="13px"></div></div>
+                <div class="form-row"><label>日期列颜色</label><input type="color" data-var="--td-date-color" value="#333333"></div>
+                <div class="form-row"><label>日期左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--td-date-offset-x" value="-4px"></div></div>
+                <div class="form-row"><label>日期上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--td-date-offset-y" value="-1px"></div></div>
+            </div>
+
+            <!-- [C2] 单元格 - 描述列 -->
+            <div class="setting-group" data-group="C2">
+                <h3>📝 单元格 - 描述列</h3>
+                <div class="form-row"><label>描述列字号</label><div class="spin-wrapper"><input type="text" data-var="--td-desc-size" value="13px"></div></div>
+                <div class="form-row"><label>描述列颜色</label><input type="color" data-var="--td-desc-color" value="#555555"></div>
+                <div class="form-row"><label>描述左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--td-desc-offset-x" value="40px"></div></div>
+                <div class="form-row"><label>描述上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--td-desc-offset-y" value="0px"></div></div>
+            </div>
+
+            <!-- [C3] 单元格 - 入账列 -->
+            <div class="setting-group" data-group="C3">
+                <h3>⬆️ 单元格 - 入账列</h3>
+                <div class="form-row"><label>入账列字号</label><div class="spin-wrapper"><input type="text" data-var="--td-in-size" value="13px"></div></div>
+                <div class="form-row"><label>入账列颜色</label><input type="color" data-var="--td-in-color" value="#333333"></div>
+                <div class="form-row"><label>入账左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--td-in-offset-x" value="-24px"></div></div>
+                <div class="form-row"><label>入账上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--td-in-offset-y" value="0px"></div></div>
+            </div>
+
+            <!-- [C4] 单元格 - 出账列 -->
+            <div class="setting-group" data-group="C4">
+                <h3>⬇️ 单元格 - 出账列</h3>
+                <div class="form-row"><label>出账列字号</label><div class="spin-wrapper"><input type="text" data-var="--td-out-size" value="13px"></div></div>
+                <div class="form-row"><label>出账列颜色</label><input type="color" data-var="--td-out-color" value="#333333"></div>
+                <div class="form-row"><label>出账左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--td-out-offset-x" value="3px"></div></div>
+                <div class="form-row"><label>出账上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--td-out-offset-y" value="0px"></div></div>
+            </div>
+
+            <!-- [C5] 单元格 - 余额列 -->
+            <div class="setting-group" data-group="C5">
+                <h3>💰 单元格 - 余额列</h3>
+                <div class="form-row"><label>余额列字号</label><div class="spin-wrapper"><input type="text" data-var="--td-bal-size" value="13px"></div></div>
+                <div class="form-row"><label>余额列颜色</label><input type="color" data-var="--td-bal-color" value="#333333"></div>
+                <div class="form-row"><label>余额左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--td-bal-offset-x" value="26px"></div></div>
+                <div class="form-row"><label>余额上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--td-bal-offset-y" value="0px"></div></div>
+            </div>
+
+            <!-- [D0] 页脚 - 分割线 -->
+            <div class="setting-group" data-group="D0">
+                <h3>➖ 页脚 - 分割线</h3>
+                <div class="form-row"><label>线条粗细</label><div class="spin-wrapper"><input type="text" data-var="--footer-border-width" value="2px"></div></div>
+                <div class="form-row"><label>线条颜色</label><input type="color" data-var="--footer-border-color" value="#8C8C8C"></div>
+                <div class="form-row"><label>线条长度</label><div class="spin-wrapper"><input type="text" data-var="--footer-border-length" value="699px"></div></div>
+                <div class="form-row"><label>左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-border-offset-x" value="0px"></div></div>
+                <div class="form-row"><label>上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-border-offset-y" value="0px"></div></div>
+            </div>
+
+            <!-- [D1] 页脚 - 左侧 -->
+            <div class="setting-group" data-group="D1">
+                <h3>📜 页脚 - 左侧公司信息</h3>
+                <div class="form-row"><label>左侧字号</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-size" value="13px"></div></div>
+                <div class="form-row"><label>左侧颜色</label><input type="color" data-var="--footer-left-color" value="#777777"></div>
+                <div class="form-row"><label>左侧行距</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-line-height" value="1.5"></div></div>
+                <div class="form-row"><label>左侧字间距</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-letter-spacing" value="0px"></div></div>
+                <div class="form-row"><label>左侧左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-offset-x" value="1px"></div></div>
+                <div class="form-row"><label>左侧上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-offset-y" value="0px"></div></div>
+            </div>
+
+            <!-- [D2] 页脚 - 右侧页码 -->
+            <div class="setting-group" data-group="D2">
+                <h3>📑 页脚 - 右侧页码</h3>
+                <div class="form-row"><label>右侧字号</label><div class="spin-wrapper"><input type="text" data-var="--footer-right-size" value="12px"></div></div>
+                <div class="form-row"><label>右侧颜色</label><input type="color" data-var="--footer-right-color" value="#333333"></div>
+                <div class="form-row"><label>右侧左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-right-offset-x" value="0px"></div></div>
+                <div class="form-row"><label>右侧上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-right-offset-y" value="0px"></div></div>
+            </div>
+
+            <!-- [D3] 页脚 - 网站链接 -->
+            <div class="setting-group" data-group="D3">
+                <h3>🔗 页脚 - 网站链接</h3>
+                <div class="form-row"><label>链接字号</label><div class="spin-wrapper"><input type="text" data-var="--footer-link-size" value="12px"></div></div>
+                <div class="form-row"><label>链接颜色</label><input type="color" data-var="--footer-link-color" value="#777777"></div>
+                <div class="form-row"><label>链接左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-link-offset-x" value="-6px"></div></div>
+                <div class="form-row"><label>链接上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-link-offset-y" value="21px"></div></div>
+                <div class="form-row"><label>链接字距</label><div class="spin-wrapper"><input type="text" data-var="--footer-link-letter-spacing" value="0px"></div></div>
+            </div>
+
+            <!-- [E1] 页面边距 -->
+            <div class="setting-group" data-group="E1">
+                <h3>📏 页面边距</h3>
+                <div class="form-row"><label>上边距</label><div class="spin-wrapper"><input type="text" data-var="--page-pad-top" value="10mm"></div></div>
+                <div class="form-row"><label>左边距</label><div class="spin-wrapper"><input type="text" data-var="--page-pad-left" value="15mm"></div></div>
+                <div class="form-row"><label>右边距</label><div class="spin-wrapper"><input type="text" data-var="--page-pad-right" value="15mm"></div></div>
+            </div>
+
+            <!-- [E2] 页面内部间距 -->
+            <div class="setting-group" data-group="E2">
+                <h3>↔️ 页面内部间距</h3>
+                <div class="form-row"><label>表头下边距</label><div class="spin-wrapper"><input type="text" data-var="--space-header-bottom" value="20px"></div></div>
+                <div class="form-row"><label>标题与表格间距</label><div class="spin-wrapper"><input type="text" data-var="--space-title-table" value="10px"></div></div>
+            </div>
+
+            <!-- [E3] 表格列宽 -->
+            <div class="setting-group" data-group="E3">
+                <h3>📐 表格列宽</h3>
+                <div class="form-row"><label>日期列宽</label><div class="spin-wrapper"><input type="text" data-var="--col-date-width" value="12%"></div></div>
+                <div class="form-row"><label>描述列宽</label><div class="spin-wrapper"><input type="text" data-var="--col-desc-width" value="38%"></div></div>
+                <div class="form-row"><label>入账列宽</label><div class="spin-wrapper"><input type="text" data-var="--col-in-width" value="15%"></div></div>
+                <div class="form-row"><label>出账列宽</label><div class="spin-wrapper"><input type="text" data-var="--col-out-width" value="15%"></div></div>
+                <div class="form-row"><label>余额列宽</label><div class="spin-wrapper"><input type="text" data-var="--col-bal-width" value="20%"></div></div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- 右侧预览区 -->
+    <main class="preview-area">
+        <div id="bill-container">
+            <!-- 动态生成的页面会在这里 -->
+        </div>
+    </main>
+
+    <script>
+        // ======================================================================
+        // 核心一：设置管理器 (与 CSS 变量双向绑定 + 存档读取)
+        // ======================================================================
+        const LOCAL_STORAGE_KEY = 'bill_pro_settings_v1';
+        const settingInputs = document.querySelectorAll('#settingsPanel input');
+        
+        // 1. 初始化读取设置
+        async function initSettings() {
+            const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (saved) {
+                const config = JSON.parse(saved);
+                applyConfigToUI(config);
+            } else {
+                try {
+                    const res = await fetch('./bill-config.json');
+                    if (res.ok) {
+                        const config = await res.json();
+                        applyConfigToUI(config);
+                    }
+                } catch (e) {}
+            }
+            if (rawDataCache.length > 0) runCollisionEngine();
+        }
+
+        function applyConfigToUI(config) {
+            settingInputs.forEach(input => {
+                const varName = input.getAttribute('data-var');
+                if (config[varName]) {
+                    input.value = config[varName];
+                    document.documentElement.style.setProperty(varName, config[varName]);
+                }
+            });
+        }
+
+        // 2. 监听输入变化，实时修改 CSS 并触发防抖重新排版
+        let renderDebounce;
+        settingInputs.forEach(input => {
+            input.addEventListener('input', function() {
+                const varName = this.getAttribute('data-var');
+                document.documentElement.style.setProperty(varName, this.value);
+                
+                clearTimeout(renderDebounce);
+                renderDebounce = setTimeout(() => {
+                    if (rawDataCache.length > 0) runCollisionEngine();
+                }, 150);
+            });
+        });
+
+        // 3. 按钮动作：保存与重置
+        function saveSettings() {
+            const config = {};
+            settingInputs.forEach(input => config[input.getAttribute('data-var')] = input.value);
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(config));
+            alert('✅ 配置已保存到本地存储！\n\n💡 提示：点击"导出配置"可将配置下载到文件，方便备份或分享。');
+        }
+
+        function exportSettingsToFile() {
+            const config = {};
+            settingInputs.forEach(input => config[input.getAttribute('data-var')] = input.value);
+            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'bill-config.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importSettingsFromFile() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    try {
+                        const config = JSON.parse(ev.target.result);
+                        settingInputs.forEach(input => {
+                            const varName = input.getAttribute('data-var');
+                            if (config[varName]) {
+                                input.value = config[varName];
+                                document.documentElement.style.setProperty(varName, config[varName]);
+                            }
+                        });
+                        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(config));
+                        alert('✅ 配置已导入成功！');
+                    } catch (err) {
+                        alert('❌ 配置文件格式错误！');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        function resetSettings() {
+            if(confirm('⚠️ 确定要恢复所有默认排版设置吗？')) {
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+                location.reload();
+            }
+        }
+
+        function clearBrowserCache() {
+            if(confirm('🗑️ 确定要清除所有浏览器缓存吗？这将清除所有保存的设置和配置。')) {
+                localStorage.clear();
+                sessionStorage.clear();
+                alert('✅ 浏览器缓存已清除！页面将重新加载。');
+                location.reload();
+            }
+        }
+
+        function getStep(unit) {
+            if (unit === 'mm') return 0.1;
+            if (unit === '%') return 0.5;
+            return 1;
+        }
+
+        function parseValueWithUnit(str) {
+            const match = str.match(/^(-?[\d.]+)(px|mm|%|pt)$/);
+            if (match) return { num: parseFloat(match[1]), unit: match[2] };
+            return { num: parseFloat(str) || 0, unit: '' };
+        }
+
+        function initSpinButtons() {
+            document.querySelectorAll('.form-row .spin-wrapper input').forEach(input => {
+                const wrapper = input.closest('.spin-wrapper');
+                if (wrapper.querySelector('.spin-btn')) return;
+
+                const btn = document.createElement('div');
+                btn.className = 'spin-btn';
+                btn.innerHTML = '<button>▲</button><button>▼</button>';
+                wrapper.appendChild(btn);
+
+                btn.querySelectorAll('button').forEach((b, i) => {
+                    b.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const { num, unit } = parseValueWithUnit(input.value);
+                        const step = getStep(unit);
+                        const delta = i === 0 ? step : -step;
+                        input.value = (num + delta) + unit;
+                        input.dispatchEvent(new Event('input'));
+                    });
+                });
+            });
+        }
+
+        // ======================================================================
+        // 核心一（扩展）：键盘方向键微调功能
+        // 支持点击任何输入框后，使用方向键进行像素级对齐微调
+        // ======================================================================
+        function initKeyboardFineTune() {
+            document.addEventListener('keydown', function(e) {
+                const activeEl = document.activeElement;
+                if (!activeEl || !activeEl.classList.contains('spin-wrapper') && !activeEl.closest('.spin-wrapper')) return;
+                
+                const input = activeEl.classList.contains('spin-wrapper') 
+                    ? activeEl.querySelector('input') 
+                    : activeEl.tagName === 'INPUT' ? activeEl : activeEl.closest('.spin-wrapper')?.querySelector('input');
+                
+                if (!input || !input.dataset.var) return;
+
+                const varName = input.dataset.var;
+                let { num, unit } = parseValueWithUnit(input.value);
+                
+                let delta = 0;
+                let step = getStep(unit);
+
+                switch(e.key) {
+                    case 'ArrowUp':
+                        delta = step;
+                        break;
+                    case 'ArrowDown':
+                        delta = -step;
+                        break;
+                    case 'ArrowRight':
+                        delta = step * 5;
+                        break;
+                    case 'ArrowLeft':
+                        delta = -step * 5;
+                        break;
+                    case 'PageUp':
+                        delta = step * 10;
+                        break;
+                    case 'PageDown':
+                        delta = -step * 10;
+                        break;
+                    case 'Home':
+                        document.querySelectorAll('.spin-wrapper input').forEach(inp => {
+                            if (inp.dataset.var === varName) {
+                                const { num: n } = parseValueWithUnit(inp.value);
+                                inp.value = (n + step * 10) + unit;
+                                inp.dispatchEvent(new Event('input'));
+                            }
+                        });
+                        e.preventDefault();
+                        return;
+                    case 'End':
+                        document.querySelectorAll('.spin-wrapper input').forEach(inp => {
+                            if (inp.dataset.var === varName) {
+                                const { num: n } = parseValueWithUnit(inp.value);
+                                inp.value = (n - step * 10) + unit;
+                                inp.dispatchEvent(new Event('input'));
+                            }
+                        });
+                        e.preventDefault();
+                        return;
+                    default:
+                        return;
+                }
+
+                if (delta !== 0) {
+                    e.preventDefault();
+                    const newVal = num + delta;
+                    input.value = newVal + unit;
+                    input.dispatchEvent(new Event('input'));
+                }
+            });
+        }
+
+        // ======================================================================
+        // 核心二：CSV 数据解析器
+        // ======================================================================
+        let rawDataCache = []; 
+        let fileBuffer = null;
+        
+        document.getElementById('csvFileInput').addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => { fileBuffer = ev.target.result; parseAndLoadData(); };
+            reader.readAsArrayBuffer(file);
+        });
+        document.getElementById('encodingSelect').addEventListener('change', parseAndLoadData);
+
+        function parseAndLoadData() {
+            if (!fileBuffer) return;
+            const encoding = document.getElementById('encodingSelect').value;
+            const csvText = new TextDecoder(encoding).decode(fileBuffer);
+            const matrix = parseCSVStrict(csvText);
+            
+            rawDataCache = [];
+            for (let i = 1; i < matrix.length; i++) {
+                const row = matrix[i];
+                if (!row || row.join('').trim() === '') continue;
+                rawDataCache.push({
+                    date: (row[0] || '').trim(),
+                    desc: (row[1] || '').trim(),
+                    in: (row[2] || '').replace(/["']/g, '').trim() ? (row[2] || '').replace(/["']/g, '').trim() + ' USD' : '',
+                    out: (row[3] || '').replace(/["']/g, '').trim() ? (row[3] || '').replace(/["']/g, '').trim() + ' USD' : '',
+                    bal: (row[4] || '').replace(/["']/g, '').trim() ? (row[4] || '').replace(/["']/g, '').trim() + ' USD' : ''
+                });
+            }
+            runCollisionEngine(); // 数据加载完毕，启动物理碰撞引擎
+        }
+
+        function parseCSVStrict(str) {
+            const arr = []; let quote = false; let row = 0, col = 0;
+            for (let c = 0; c < str.length; c++) {
+                let cc = str[c], nc = str[c+1];
+                arr[row] = arr[row] || []; arr[row][col] = arr[row][col] || '';
+                if (cc == '"' && quote && nc == '"') { arr[row][col] += cc; ++c; continue; }
+                if (cc == '"') { quote = !quote; continue; }
+                if (cc == ',' && !quote) { ++col; continue; }
+                if ((cc == '\r' && nc == '\n' && !quote)) { ++row; col = 0; ++c; continue; }
+                if ((cc == '\n' || cc == '\r') && !quote) { ++row; col = 0; continue; }
+                arr[row][col] += cc;
+            }
+            return arr;
+        }
+
+        // ======================================================================
+        // 核心三：史诗级物理碰撞排版引擎 (精确到像素贴边换页)
+        // ======================================================================
+        function runCollisionEngine() {
+            const container = document.getElementById('bill-container');
+            container.innerHTML = '';
+
+            const data = rawDataCache.length > 0 ? rawDataCache : [{ date: '-', desc: '请在左侧上传 CSV 文件...', in: '', out: '', bal: '' }];
+            
+            let dataIndex = 0; 
+            let pageNum = 1;   
+            let pages = [];    
+
+            while (dataIndex < data.length) {
+                // 1. 创建纸张
+                const pageDiv = document.createElement('div');
+                pageDiv.className = 'page';
+                
+                // 2. 创建内容包裹区 (它的高度是动态生长的)
+                const contentWrapper = document.createElement('div');
+                contentWrapper.className = 'page-content';
+                
+                // 3. 构建当前页的内容头部
+                let headerHtml = `<div class="header-logo"><img src="logo.png" alt="Logo" style="height: var(--logo-height);"></div>`;
+                if (pageNum === 1) {
+                    headerHtml += `
+                        <div class="page-title">多币种账户账单</div>
+                        <span class="account-date-label">账号创建时间</span><span class="account-date-value">2023/12/07</span>
+                        <div class="info-section" style="line-height: 1.5;">
+                            <div class="customer-info" style="line-height: 1.5;">
+                                <div class="cust-name">GAME WONDER LIMITED</div>
+                                <div class="cust-addr">香港九龙观塘兴业街19-21号明生工业大<br>厦5楼511室</div>
+                                <div class="cust-region-1">香港</div><div class="cust-region-2">香港</div><div class="cust-region-3">中国香港</div>
+                            </div>
+                            <div class="contact-info" style="line-height: 1.5;">
+                                <div class="title">联系方式</div>
+                                <div class="detail">邮箱：b2bhk@worldfirst.com.cn</div>
+                                <div class="detail">+400 976 6666</div>
+                            </div>
+                        </div>
+                        <span class="filter-label">筛选时间范围 :</span><span class="filter-value">2026/02/01 ~ 2026/02/28</span>
+                        <div class="table-title">交易明细</div>
+                    `;
+                }
+
+                // 表格框架
+                const table = document.createElement('table');
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th class="col-date th-item">日期</th>
+                            <th class="col-desc th-item">描述</th>
+                            <th class="col-in th-item">入账金额</th>
+                            <th class="col-out th-item">出账金额</th>
+                            <th class="col-bal th-item">余额</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                `;
+                const tbody = table.querySelector('tbody');
+
+                // 4. 创建页脚 (先放进去，以确定它在页面底部的真实物理坐标)
+                const footer = document.createElement('div');
+                footer.className = 'footer';
+                // 页码先用占位符，最后统一替换
+                footer.innerHTML = `
+                    <div class="footer-border"></div>
+                    <div class="footer-content">
+                        <div class="footer-left">
+                            WorldFirst (Singapore) Merchant Services Pte. Ltd.. （公司注册号为201735998W）（“WorldFirst MS”）是新加坡金融管理局根据Payment Services Act 2019授权的Major Payment Institution。WorldFirst MS的注册地址是128 Beach Road, #20-01, Guoco Midtown Office, Singapore 189773。
+                        </div>
+                        <span class="website-link">https://www.worldfirst.com.cn/cn/</span>
+                    </div>
+                    <div class="footer-right page-num-placeholder"></div>
+                `;
+
+                // 组装 DOM 树并插入文档流 (必须插入文档流才能获取真实坐标)
+                contentWrapper.innerHTML = headerHtml;
+                contentWrapper.appendChild(table);
+                pageDiv.appendChild(contentWrapper);
+                pageDiv.appendChild(footer);
+                container.appendChild(pageDiv);
+                pages.push(pageDiv);
+
+                // 5. 【极限微操】循环插入数据，进行碰撞检测
+                while (dataIndex < data.length) {
+                    const rowData = data[dataIndex];
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="col-date">${rowData.date}</td>
+                        <td class="col-desc">${rowData.desc}</td>
+                        <td class="col-in">${rowData.in}</td>
+                        <td class="col-out">${rowData.out}</td>
+                        <td class="col-bal">${rowData.bal}</td>
+                    `;
+                    tbody.appendChild(tr);
+
+                    // 获取当前内容底部与页脚顶部的绝对屏幕坐标
+                    const contentRect = contentWrapper.getBoundingClientRect();
+                    const footerRect = footer.getBoundingClientRect();
+
+                    // 【碰撞判定】如果内容的底部坐标 >= 页脚的顶部坐标，说明撞上了！
+                    // (减去 1 像素是为了容错，防止边框粘连影响美观)
+                    if (contentRect.bottom >= footerRect.top - 1) {
+                        // 撤回刚刚插入的这一行
+                        tbody.removeChild(tr);
+                        // 游标不动，留给下一页
+                        break; 
+                    } else {
+                        // 安全，游标继续向前
+                        dataIndex++; 
+                    }
+                }
+                pageNum++;
+            }
+
+            // 6. 收尾：计算总页数，并回填所有页脚的页码
+            const totalPages = pages.length;
+            pages.forEach((page, index) => {
+                const numDiv = page.querySelector('.page-num-placeholder');
+                numDiv.innerText = `${index + 1} / ${totalPages}`;
+            });
+        }
+
+        // ======================================================================
+        // 设置面板折叠功能
+        // ======================================================================
+        let settingsCollapsed = false;
+
+        function toggleSettingsPanel() {
+            const panel = document.getElementById('settingsPanel');
+            const btn = document.getElementById('toggleSettingsBtn');
+            settingsCollapsed = !settingsCollapsed;
+            if (settingsCollapsed) {
+                panel.classList.add('collapsed');
+                btn.textContent = '展开设置';
+                btn.classList.add('collapsed');
+            } else {
+                panel.classList.remove('collapsed');
+                btn.textContent = '收起设置';
+                btn.classList.remove('collapsed');
+            }
+        }
+
+        // 页面启动初始化
+        window.onload = () => {
+            initSettings();
+            runCollisionEngine();
+            initSpinButtons();
+            initKeyboardFineTune();
+            toggleSettingsPanel();
+        };
+    </script>
+</body>
+</html>
