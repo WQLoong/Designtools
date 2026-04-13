@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>一个PDF生成小工具</title>
+    <title>专业电子账单生成系统 - Pro</title>
     <style>
         /* ========================================================
            字体引用
@@ -1499,12 +1499,20 @@
             for (let i = 1; i < matrix.length; i++) {
                 const row = matrix[i];
                 if (!row || row.join('').trim() === '') continue;
+                const addCurrency = (val) => {
+                    if (!val || !val.trim()) return '';
+                    val = val.trim();
+                    const hasSymbolPrefix = /^[¥$€£₹₩₽₴₦฿¥A-Z]{1,5}\s*/.test(val);
+                    const hasCodeSuffix = /\s*[A-Z]{3}$/.test(val);
+                    if (hasSymbolPrefix || hasCodeSuffix) return val;
+                    return val + ' USD';
+                };
                 rawDataCache.push({
                     date: (row[0] || '').trim(),
                     desc: (row[1] || '').trim(),
-                    in: (row[2] || '').replace(/["']/g, '').trim() ? (row[2] || '').replace(/["']/g, '').trim() + ' USD' : '',
-                    out: (row[3] || '').replace(/["']/g, '').trim() ? (row[3] || '').replace(/["']/g, '').trim() + ' USD' : '',
-                    bal: (row[4] || '').replace(/["']/g, '').trim() ? (row[4] || '').replace(/["']/g, '').trim() + ' USD' : ''
+                    in: addCurrency(row[2] || ''),
+                    out: addCurrency(row[3] || ''),
+                    bal: addCurrency(row[4] || '')
                 });
             }
             runCollisionEngine(); // 数据加载完毕，启动物理碰撞引擎
