@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>专业电子账单生成系统 - Pro</title>
+    <title>&nbsp;*</title>
     <style>
         /* ========================================================
            字体引用
@@ -204,7 +204,7 @@
             --th-bal-offset-y: -9px;
 
             /* ==================== [B7] 表头分割线 ==================== */
-            --th-border-width: 1.5px;
+            --th-border-width: 1px;
             --th-border-color: #8c8c8c;
             --th-border-length: 699px;
             --th-border-offset: 10px;
@@ -254,29 +254,30 @@
             --footer-left-size: 8pt;
             --footer-left-color: #787878;
             --footer-left-offset-x: 2px;
-            --footer-left-offset-y: -36px;
+            --footer-left-offset-y: -34px;
             --footer-left-line-height: 1.3;
-            --footer-left-letter-spacing: -0.1px;
+            --footer-left-letter-spacing: 0px;
 
             /* ==================== [D0] 页脚 - 分割线 ==================== */
-            --footer-border-width: 1px;
+            --footer-border-width: 0.1px;
             --footer-border-color: #000000;
             --footer-border-length: 699px;
             --footer-border-offset-x: 0px;
             --footer-border-offset-y: -30px;
+            --footer-content-width: 700px;
 
             /* ==================== [D2] 页脚 - 右侧页码 ==================== */
             --footer-right-size: 9pt;
             --footer-right-color: #787878;
             --footer-right-weight: normal;
             --footer-right-offset-x: 98px;
-            --footer-right-offset-y: 20px;
+            --footer-right-offset-y: 18px;
 
             /* ==================== [D3] 页脚 - 网站链接 ==================== */
             --footer-link-size: 9pt;
             --footer-link-color: #787878;
             --footer-link-offset-x: 2px;
-            --footer-link-offset-y: -33px;
+            --footer-link-offset-y: -34px;
             --footer-link-letter-spacing: 0px;
 
             /* ==================== [E1] 页面边距 ==================== */
@@ -298,7 +299,7 @@
 
         /* 全局重置 */
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: "PingFangSC-Regular", "PingFang SC", "PingFang-SC-Regular", "Microsoft YaHei", sans-serif; background-color: #525659; color: var(--color-text-main); height: 100vh; overflow: hidden; display: flex; }
+        body { font-family: "PingFangSC-Regular", "PingFang SC", "PingFang-SC-Regular", "Microsoft YaHei", sans-serif; background-color: #525659; color: var(--color-text-main); height: 100vh; overflow: hidden; display: flex; font-variant-ligatures: none; font-feature-settings: "liga" 0, "clig" 0, "dlig" 0, "hlig" 0; }
 
         /* ========================================================
            UI 布局：左侧控制台 + 右侧 PDF 预览区 
@@ -753,13 +754,15 @@
             left: calc(50% - var(--footer-border-length) / 2);
             top: calc(-1 * var(--footer-border-width) + var(--footer-border-offset-y));
             width: var(--footer-border-length);
-            height: var(--footer-border-width);
+            height: 1px;
             background: var(--footer-border-color);
             margin-left: var(--footer-border-offset-x);
+            transform: scaleY(0.5);
+            transform-origin: center top;
         }
 
         .footer-left {
-            width: var(--footer-border-length);
+            width: var(--footer-content-width);
             margin: 0 auto;
             font-size: var(--footer-left-size);
             font-family: 'PingFangSC-Medium', 'PingFangSC-Regular', sans-serif;
@@ -773,7 +776,7 @@
         }
 
         .footer-content {
-            width: var(--footer-border-length);
+            width: var(--footer-content-width);
             margin: 0 auto;
         }
 
@@ -1148,11 +1151,12 @@
             <!-- [D0] 页脚 - 分割线 -->
             <div class="setting-group" data-group="D0">
                 <h3>➖ 页脚 - 分割线</h3>
-                <div class="form-row"><label>线条粗细</label><div class="spin-wrapper"><input type="text" data-var="--footer-border-width" value="1px"></div></div>
+                <div class="form-row"><label>线条粗细</label><div class="spin-wrapper"><input type="text" data-var="--footer-border-width" value="0.1px"></div></div>
                 <div class="form-row"><label>线条颜色</label><input type="color" data-var="--footer-border-color" value="#8C8C8C"></div>
                 <div class="form-row"><label>线条长度</label><div class="spin-wrapper"><input type="text" data-var="--footer-border-length" value="699px"></div></div>
                 <div class="form-row"><label>左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-border-offset-x" value="0px"></div></div>
                 <div class="form-row"><label>上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-border-offset-y" value="-30px"></div></div>
+                <div class="form-row"><label>内容宽度</label><div class="spin-wrapper"><input type="text" data-var="--footer-content-width" value="700px"></div></div>
             </div>
 
             <!-- [D1] 页脚 - 左侧 -->
@@ -1161,9 +1165,9 @@
                 <div class="form-row"><label>左侧字号</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-size" value="8pt"></div></div>
                 <div class="form-row"><label>左侧颜色</label><input type="color" data-var="--footer-left-color" value="#787878"></div>
                 <div class="form-row"><label>左侧行距</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-line-height" value="1.3"></div></div>
-                <div class="form-row"><label>左侧字间距</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-letter-spacing" value="-0.1px"></div></div>
+                <div class="form-row"><label>左侧字间距</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-letter-spacing" value="0px"></div></div>
                 <div class="form-row"><label>左侧左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-offset-x" value="2px"></div></div>
-                <div class="form-row"><label>左侧上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-offset-y" value="-36px"></div></div>
+                <div class="form-row"><label>左侧上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-left-offset-y" value="-34px"></div></div>
             </div>
 
             <!-- [D2] 页脚 - 右侧页码 -->
@@ -1172,7 +1176,7 @@
                 <div class="form-row"><label>右侧字号</label><div class="spin-wrapper"><input type="text" data-var="--footer-right-size" value="9pt"></div></div>
                 <div class="form-row"><label>右侧颜色</label><input type="color" data-var="--footer-right-color" value="#787878"></div>
                 <div class="form-row"><label>右侧左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-right-offset-x" value="0px"></div></div>
-                <div class="form-row"><label>右侧上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-right-offset-y" value="-0.5px"></div></div>
+                <div class="form-row"><label>右侧上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-right-offset-y" value="16px"></div></div>
             </div>
 
             <!-- [D3] 页脚 - 网站链接 -->
@@ -1181,7 +1185,7 @@
                 <div class="form-row"><label>链接字号</label><div class="spin-wrapper"><input type="text" data-var="--footer-link-size" value="12px"></div></div>
                 <div class="form-row"><label>链接颜色</label><input type="color" data-var="--footer-link-color" value="#787878"></div>
                 <div class="form-row"><label>链接左右偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-link-offset-x" value="-6px"></div></div>
-                <div class="form-row"><label>链接上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-link-offset-y" value="21px"></div></div>
+                <div class="form-row"><label>链接上下偏移</label><div class="spin-wrapper"><input type="text" data-var="--footer-link-offset-y" value="-34px"></div></div>
                 <div class="form-row"><label>链接字距</label><div class="spin-wrapper"><input type="text" data-var="--footer-link-letter-spacing" value="0px"></div></div>
             </div>
 
@@ -1602,7 +1606,7 @@
                     <div class="footer-border"></div>
                     <div class="footer-content">
                         <div class="footer-left">
-                            WorldFirst (Singapore) Merchant Services Pte. Ltd. （公司注册号为201735998W）（“WorldFirst MS”）是新加坡金融管理局根据Payment Services Act 2019授权的Major Payment Institution。WorldFirst MS的注册地址是128 Beach Road, #20-01, Guoco Midtown Office,<br>Singapore 189773。
+                            WorldFirst (Singapore) Merchant Services Pte. Ltd. （公司注册号为201735998W）&nbsp;（“WorldFirst MS”）是新加坡金融管理局根据Payment<br>Services Act 2019授权的Major Payment Institution。WorldFirst MS的注册地址是128 Beach Road, #20-01, Guoco Midtown Office,<br>Singapore 189773。
                         </div>
                         <span class="website-link">https://www.worldfirst.com.cn/cn/</span>
                     </div>
@@ -1633,10 +1637,10 @@
                     // 获取当前内容底部与页脚顶部的绝对屏幕坐标
                     const contentRect = contentWrapper.getBoundingClientRect();
                     const footerRect = footer.getBoundingClientRect();
+                    const footerBorderTop = footerRect.top + parseInt(getComputedStyle(footer).getPropertyValue('--footer-border-offset-y')) - parseInt(getComputedStyle(document.documentElement).getPropertyValue('--footer-border-width'));
 
-                    // 【碰撞判定】如果内容的底部坐标 >= 页脚的顶部坐标，说明撞上了！
-                    // (减去 1 像素是为了容错，防止边框粘连影响美观)
-                    if (contentRect.bottom >= footerRect.top - 1) {
+                    // 【碰撞判定】如果内容的底部坐标 >= 页脚分割线的顶部坐标，说明撞上了！
+                    if (contentRect.bottom >= footerBorderTop - 1) {
                         // 撤回刚刚插入的这一行
                         tbody.removeChild(tr);
                         // 游标不动，留给下一页
