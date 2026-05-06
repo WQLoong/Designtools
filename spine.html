@@ -79,13 +79,13 @@
         </div>
         <!-- Image -->
         <div class="card" id="card-img">
-            <div class="card-title">2. Image (.png)</div>
+            <div class="card-title">2. Image (.png) [多张]</div>
             <div class="drop-area" id="drop-img">
                 <div class="icon">🖼️</div>
                 <div>点击或拖入</div>
                 <div class="filename" id="name-img"></div>
             </div>
-            <input type="file" id="file-img">
+            <input type="file" id="file-img" multiple accept="image/png">
         </div>
         <!-- JSON -->
         <div class="card" id="card-json">
@@ -124,7 +124,8 @@
     const state = {
         atlasText: null,
         atlasName: 'restored.atlas',
-        imgObj: null,
+        imgObjs: [],
+        imgNames: [],
         jsonObj: null,
         ratio: 1.0,
         isSmart: false
@@ -145,7 +146,6 @@
         const handle = (file) => {
             if (!file) return;
             log(`正在读取 ${type}: ${file.name}...`);
-            nameEl.innerText = file.name;
             card.classList.add('active');
 
             const reader = new FileReader();
@@ -154,8 +154,10 @@
                 reader.onload = (e) => {
                     const img = new Image();
                     img.onload = () => {
-                        state.imgObj = img;
-                        log(`✅ 图片加载成功: ${img.width}x${img.height}`, 'ok');
+                        state.imgObjs.push(img);
+                        state.imgNames.push(file.name);
+                        nameEl.innerText = state.imgNames.length + ' 张图片已加载:\n' + state.imgNames.join('\n');
+                        log(`✅ 图片加载成功: ${file.name} (${img.width}x${img.height})`, 'ok');
                         updateUI();
                     };
                     img.src = e.target.result;
@@ -187,8 +189,24 @@
         };
 
         area.onclick = () => input.click();
-        input.onchange = (e) => handle(e.target.files[0]);
-        area.ondrop = (e) => handle(e.dataTransfer.files[0]);
+        input.onchange = (e) => {
+            if (type === 'img') {
+                for (let i = 0; i < e.target.files.length; i++) {
+                    handle(e.target.files[i]);
+                }
+            } else {
+                handle(e.target.files[0]);
+            }
+        };
+        area.ondrop = (e) => {
+            if (type === 'img') {
+                for (let i = 0; i < e.dataTransfer.files.length; i++) {
+                    handle(e.dataTransfer.files[i]);
+                }
+            } else {
+                handle(e.dataTransfer.files[0]);
+            }
+        };
     }
 
     bind('atlas', 'atlas');
@@ -272,12 +290,16 @@
 
     function updateUI() {
         document.getElementById('ratio-display').innerText = 'x' + state.ratio.toFixed(5);
-        if (state.imgObj) {
-            const w = Math.round(state.imgObj.width * state.ratio);
-            const h = Math.round(state.imgObj.height * state.ratio);
-            document.getElementById('res-display').innerText = `${state.imgObj.width}x${state.imgObj.height} ➜ ${w}x${h}`;
+        if (state.imgObjs.length > 0) {
+            const imgInfo = state.imgObjs.map((img, i) => {
+                const w = Math.round(img.width * state.ratio);
+                const h = Math.round(img.height * state.ratio);
+                return `${state.imgNames[i]}: ${img.width}x${img.height} → ${w}x${h}`;
+            }).join('\n　');
+            document.getElementById('res-display').innerText = imgInfo;
+            document.getElementById('res-display').style.whiteSpace = 'pre-wrap';
         }
-        if (state.atlasText && state.imgObj) {
+        if (state.atlasText && state.imgObjs.length > 0) {
             document.getElementById('btn-run').disabled = false;
         }
     }
@@ -305,7 +327,7 @@
             }
 
             // 安全检查：确保图片存在
-            if (!state.imgObj) {
+            if (state.imgObjs.length === 0) {
                 log('❌ 错误: 图片未上传，请上传图片文件！', 'err');
                 alert('请先上传图片文件！');
                 btn.disabled = false;
@@ -319,7 +341,7 @@
                 return;
             }
 
-            log(`✅ 图片对象存在: ${state.imgObj.width}x${state.imgObj.height}`, 'ok');
+            log(`✅ 图片对象存在: ${state.imgObjs.length} 张`, 'ok');
 
             // 1. 处理 Atlas
             const lines = state.atlasText.split(/\r?\n/);
@@ -352,46 +374,51 @@
             let atlasFileName = state.atlasName;
             if (atlasFileName.endsWith('.txt')) atlasFileName = atlasFileName.replace('.txt', '.atlas');
             if (!atlasFileName.endsWith('.atlas')) atlasFileName += '.atlas';
-            
+
             zip.file(atlasFileName, newAtlas);
             log(`✅ 已添加 Atlas: ${atlasFileName}`, 'ok');
 
-            // 2. 处理图片 (关键修复点)
-            if (!state.imgObj) throw new Error("图片对象丢失，请重新上传图片！");
+            let zipFileName = atlasFileName.replace(/\.atlas$/, '.zip');
 
-            log(`正在处理图片 (尺寸 x${mult.toFixed(2)})...`);
-            const newW = Math.round(state.imgObj.width * mult);
-            const newH = Math.round(state.imgObj.height * mult);
-            
-            if (newW === 0 || newH === 0) throw new Error(`计算出的图片尺寸无效: ${newW}x${newH}`);
+            // 2. 处理图片 (多张)
+            for (let imgIdx = 0; imgIdx < state.imgObjs.length; imgIdx++) {
+                const imgObj = state.imgObjs[imgIdx];
+                const imgName = state.imgNames[imgIdx] || `texture_${imgIdx + 1}.png`;
 
-            const cvs = document.createElement('canvas');
-            cvs.width = newW;
-            cvs.height = newH;
-            const ctx = cvs.getContext('2d');
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            
-            // 绘制图片
-            ctx.drawImage(state.imgObj, 0, 0, newW, newH);
-            
-            // 导出 Blob
-            const blob = await new Promise(resolve => cvs.toBlob(resolve, 'image/png'));
-            
-            if (!blob) throw new Error("图片生成失败 (Blob is null)");
-            
-            // 确保文件名有效
-            if (!imgName || imgName === "") imgName = "texture.png";
-            
-            zip.file(imgName, blob);
-            log(`✅ 已添加图片: ${imgName} (${newW}x${newH})`, 'ok');
+                if (!imgObj) throw new Error(`图片对象 ${imgIdx + 1} 丢失，请重新上传图片！`);
+
+                log(`正在处理图片 ${imgIdx + 1}/${state.imgObjs.length}: ${imgName} (尺寸 x${mult.toFixed(2)})...`);
+                const newW = Math.round(imgObj.width * mult);
+                const newH = Math.round(imgObj.height * mult);
+
+                if (newW === 0 || newH === 0) throw new Error(`计算出的图片尺寸无效: ${newW}x${newH}`);
+
+                const cvs = document.createElement('canvas');
+                cvs.width = newW;
+                cvs.height = newH;
+                const ctx = cvs.getContext('2d');
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+
+                ctx.drawImage(imgObj, 0, 0, newW, newH);
+
+                const blob = await new Promise(resolve => cvs.toBlob(resolve, 'image/png'));
+
+                if (!blob) throw new Error(`图片生成失败 (Blob is null): ${imgName}`);
+
+                let finalImgName = imgName;
+                if (!finalImgName || finalImgName === "") finalImgName = `texture_${imgIdx + 1}.png`;
+
+                zip.file(finalImgName, blob);
+                log(`✅ 已添加图片: ${finalImgName} (${newW}x${newH})`, 'ok');
+            }
 
             // 3. 下载
             log('📦 正在压缩 ZIP...');
             const content = await zip.generateAsync({type:"blob"});
             const link = document.createElement('a');
             link.href = URL.createObjectURL(content);
-            link.download = `spine_fixed.zip`;
+            link.download = zipFileName;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
