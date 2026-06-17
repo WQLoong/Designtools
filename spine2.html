@@ -1791,4 +1791,92 @@
                 updateGenerateButtonState();
                 showToast(`成功批量创建 ${imported} 个动画组！`);
             };
-            reader.readAsText(fil
+            reader.readAsText(file);
+        }
+
+        // 简单 CSV 行解析（支持引号包裹的字段）
+        function parseCsvLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const ch = line[i];
+                if (inQuotes) {
+                    if (ch === '"') {
+                        if (i + 1 < line.length && line[i + 1] === '"') {
+                            current += '"';
+                            i++;
+                        } else {
+                            inQuotes = false;
+                        }
+                    } else {
+                        current += ch;
+                    }
+                } else {
+                    if (ch === '"') {
+                        inQuotes = true;
+                    } else if (ch === ',' || ch === '\t') {
+                        result.push(current);
+                        current = '';
+                    } else {
+                        current += ch;
+                    }
+                }
+            }
+            result.push(current);
+            return result;
+        }
+
+        // --- 全局页面启动逻辑初始化 ---
+        window.addEventListener('DOMContentLoaded', () => {
+            // 初始化自带一个动画组
+            addAnimationGroup();
+
+            // 模式切换
+            document.getElementById('modeSequenceBtn').addEventListener('click', () => switchMode('sequence'));
+            document.getElementById('modeSkeletalBtn').addEventListener('click', () => switchMode('skeletal'));
+
+            // 加载预设示例
+            document.getElementById('loadPresetButton').addEventListener('click', buildPresetSlotsAnimations);
+
+            // 绑定添加动画组按钮
+            document.getElementById('addGroupButton').addEventListener('click', addAnimationGroup);
+
+            // 绑定批量添加动画组
+            document.getElementById('batchAddButton').addEventListener('click', () => {
+                const count = parseInt(document.getElementById('batchCountInput').value) || 5;
+                for (let i = 0; i < count; i++) addAnimationGroup();
+                showToast(`已批量添加 ${count} 个动画组`);
+            });
+            document.getElementById('batchCountInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') document.getElementById('batchAddButton').click();
+            });
+
+            // 绑定 CSV 表格导入
+            document.getElementById('importCsvButton').addEventListener('click', () => {
+                document.getElementById('csvFileInput').click();
+            });
+            document.getElementById('csvFileInput').addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    parseAndImportCsv(e.target.files[0]);
+                }
+                e.target.value = '';
+            });
+
+            // 绑定生成大按钮
+            document.getElementById('uploadButton').addEventListener('click', buildAndDownloadSpine);
+
+            // 绑定全局导出文件名和 Spine 版本变动
+            document.getElementById('outputFileName').addEventListener('input', (e) => {
+                state.outputFileName = e.target.value.trim() || 'animation';
+            });
+            document.getElementById('spineVersion').addEventListener('change', (e) => {
+                state.spineVersion = e.target.value;
+            });
+
+            // 初始化更新按钮状态
+            updateGenerateButtonState();
+        });
+    </script>
+</body>
+</html>
