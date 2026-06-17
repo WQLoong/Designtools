@@ -92,9 +92,6 @@
             <!-- 全局动作栏 -->
             <div class="bg-brand-card border border-brand-border rounded-xl p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div class="flex flex-wrap items-center gap-2">
-                    <button id="loadPresetButton" class="bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white font-semibold px-4 py-2 rounded-lg transition-colors focus:outline-none text-sm shadow-md">
-                        ✨ 加载 slots 序列帧示例
-                    </button>
                     <button id="addGroupButton" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-brand-border font-semibold px-4 py-2 rounded-lg transition-colors focus:outline-none text-sm">
                         + 添加组
                     </button>
@@ -268,16 +265,13 @@
             state.currentMode = mode;
             const seqBtn = document.getElementById('modeSequenceBtn');
             const skeBtn = document.getElementById('modeSkeletalBtn');
-            const loadPresetBtn = document.getElementById('loadPresetButton');
 
             if (mode === 'sequence') {
                 seqBtn.className = "py-2.5 px-4 text-sm font-semibold border-b-2 border-brand-blue text-brand-blue focus:outline-none transition-colors";
                 skeBtn.className = "py-2.5 px-4 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 focus:outline-none transition-colors";
-                loadPresetBtn.textContent = "✨ 加载 slots 序列帧示例";
             } else {
                 skeBtn.className = "py-2.5 px-4 text-sm font-semibold border-b-2 border-brand-blue text-brand-blue focus:outline-none transition-colors";
                 seqBtn.className = "py-2.5 px-4 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 focus:outline-none transition-colors";
-                loadPresetBtn.textContent = "✨ 加载 slots 骨骼示例";
             }
 
             // 清空当前的组以防冲突
@@ -1533,71 +1527,7 @@
             }, 'image/png');
         }
 
-        // --- 绘制 Slots 默认精美图标图源 ---
-        function drawDefaultSymbol(ctx, size) {
-            ctx.clearRect(0, 0, size, size);
-            const cx = size / 2;
-            const cy = size / 2;
-            
-            // 1. 发光底板
-            const gradP = ctx.createRadialGradient(cx, cy, 10, cx, cy, 55);
-            gradP.addColorStop(0, '#4a00e0');
-            gradP.addColorStop(1, '#8e2de2');
-            ctx.fillStyle = gradP;
-            ctx.beginPath();
-            ctx.arc(cx, cy, 50, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.lineWidth = 4;
-            ctx.strokeStyle = '#ffd700';
-            ctx.stroke();
 
-            // 2. 扫光层
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(cx, cy, 48, 0, Math.PI * 2);
-            ctx.clip();
-            const sweepGrad = ctx.createLinearGradient(cx - 50, cy - 50, cx + 50, cy + 50);
-            sweepGrad.addColorStop(0, 'rgba(255,255,255,0)');
-            sweepGrad.addColorStop(0.5, 'rgba(255,255,255,0.25)');
-            sweepGrad.addColorStop(1, 'rgba(255,255,255,0)');
-            ctx.fillStyle = sweepGrad;
-            ctx.fillRect(cx - 60, cy - 60, 120, 120);
-            ctx.restore();
-
-            // 3. 7号标志主体
-            ctx.save();
-            ctx.translate(cx, cy);
-            ctx.beginPath();
-            ctx.moveTo(-20, -30);
-            ctx.lineTo(20, -30);
-            ctx.lineTo(5, 25);
-            ctx.lineTo(-5, 25);
-            ctx.lineTo(8, -18);
-            ctx.lineTo(-20, -18);
-            ctx.closePath();
-            const gradS = ctx.createLinearGradient(0, -30, 0, 25);
-            gradS.addColorStop(0, '#ff416c');
-            gradS.addColorStop(1, '#ff4b2b');
-            ctx.fillStyle = gradS;
-            ctx.fill();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // 顶戴星芒皇冠
-            ctx.fillStyle = '#ffd700';
-            ctx.beginPath();
-            ctx.moveTo(-6, -34);
-            ctx.lineTo(-12, -42);
-            ctx.lineTo(-3, -39);
-            ctx.lineTo(0, -48);
-            ctx.lineTo(3, -39);
-            ctx.lineTo(12, -42);
-            ctx.lineTo(6, -34);
-            ctx.closePath();
-            ctx.fill();
-            ctx.restore();
-        }
 
         // --- 加载通用单张本地图片 ---
         function loadImageFromFile(file) {
@@ -1613,105 +1543,7 @@
         }
 
         // --- 核心：自动加载内置 Slots 示例系统 (自适应工作模式) ---
-        async function buildPresetSlotsAnimations() {
-            showToast("正在生成内置 slots 示例，请稍候...", "info");
-            state.groups.forEach(g => stopAnimLoop(g.id));
-            state.groups = [];
-            document.getElementById('animationGroups').innerHTML = '';
-            
-            const presets = [
-                { name: "in", template: "in", count: 12, fps: 24, events: [{ frame: 10, name: "land_sound", intVal: 0, floatVal: 0.0, stringVal: "heavy_drop" }] },
-                { name: "idle", template: "idle", count: 16, fps: 15, events: [] },
-                { name: "loop", template: "loop", count: 16, fps: 20, events: [] },
-                { name: "win", template: "win", count: 20, fps: 24, events: [{ frame: 1, name: "win_sound", intVal: 777, floatVal: 1.5, stringVal: "coins_cascade" }] },
-                { name: "gray", template: "gray", count: 8, fps: 12, events: [] },
-                { name: "out", template: "out", count: 10, fps: 20, events: [] }
-            ];
 
-            const size = 150; 
-            
-            // 实时在 Canvas 上拼出一张 Slots 经典 7 号图案作为单贴图源
-            const canvasS = document.createElement('canvas');
-            canvasS.width = size;
-            canvasS.height = size;
-            const ctxS = canvasS.getContext('2d');
-            drawDefaultSymbol(ctxS, size);
-            
-            const defaultBlob = await new Promise(res => canvasS.toBlob(res, 'image/png'));
-            const defaultFile = new File([defaultBlob], "symbol_7.png", { type: "image/png" });
-            const defaultImg = new Image();
-            defaultImg.src = canvasS.toDataURL();
-            await new Promise(res => defaultImg.onload = res);
-
-            for (const preset of presets) {
-                const groupObj = {
-                    id: `group-preset-${preset.name}-${Date.now()}`,
-                    animationName: preset.name,
-                    frameRate: preset.fps,
-                    mode: "multiple",
-                    skeletalTemplate: preset.template,
-                    files: [],
-                    singleImage: null,
-                    sliceRows: 1,
-                    sliceCols: 1,
-                    events: preset.events
-                };
-                
-                if (state.currentMode === 'skeletal') {
-                    // 骨骼动画模式下：仅向组中添加单张静态符号图片
-                    groupObj.files.push({
-                        file: defaultFile,
-                        img: defaultImg,
-                        name: "symbol_7.png",
-                        regionName: sanitizeName(preset.name)
-                    });
-                } else {
-                    // 序列帧模式下：根据数学轨迹，将动画烘焙成多张序列帧图片写入组
-                    for (let f = 0; f < preset.count; f++) {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = size;
-                        canvas.height = size;
-                        const ctx = canvas.getContext('2d');
-                        
-                        const { symbol } = getSkeletalTransform(preset.template, f / preset.count);
-                        const cx = size / 2;
-                        const cy = size / 2;
-                        
-                        ctx.save();
-                        ctx.translate(cx + symbol.x, cy + symbol.y);
-                        ctx.scale(symbol.scaleX, symbol.scaleY);
-                        ctx.rotate(symbol.rotate * Math.PI / 180);
-                        ctx.globalAlpha = symbol.alpha;
-                        drawTintedImage(ctx, defaultImg, -75, -75, 150, 150, symbol.tint);
-                        ctx.restore();
-
-                        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-                        const filename = `${preset.name}_${String(f).padStart(3, '0')}.png`;
-                        const file = new File([blob], filename, { type: 'image/png' });
-                        
-                        const img = new Image();
-                        img.src = canvas.toDataURL();
-                        await new Promise(resolve => img.onload = resolve);
-                        
-                        groupObj.files.push({
-                            file,
-                            img,
-                            name: filename,
-                            regionName: `${preset.name}_${String(f).padStart(3, '0')}`
-                        });
-                    }
-                }
-                
-                state.groups.push(groupObj);
-                renderGroupCard(groupObj);
-                updateEventsUI(groupObj);
-                updateGroupFilesUI(groupObj);
-            }
-            
-            updateGroupLabels();
-            updateGenerateButtonState();
-            showToast("内置 Slots 动画组全部载入完毕！");
-        }
 
         // --- CSV 表格批量导入动画组 ---
         function parseAndImportCsv(file) {
@@ -1835,9 +1667,6 @@
             // 模式切换
             document.getElementById('modeSequenceBtn').addEventListener('click', () => switchMode('sequence'));
             document.getElementById('modeSkeletalBtn').addEventListener('click', () => switchMode('skeletal'));
-
-            // 加载预设示例
-            document.getElementById('loadPresetButton').addEventListener('click', buildPresetSlotsAnimations);
 
             // 绑定添加动画组按钮
             document.getElementById('addGroupButton').addEventListener('click', addAnimationGroup);
