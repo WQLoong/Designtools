@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Spine动画生成器 - 本地运行版</title>
+    <!-- Tailwind CSS CDN 用于构建精美现代的暗色界面 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- JSZip 与 FileSaver CDN 用于浏览器本地打包并保存文件 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            blue: '#0057ff',
+                            dark: '#0d1117',
+                            card: '#161b22',
+                            border: '#30363d'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d1117;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8b949e;
+        }
+    </style>
+</head>
+<body class="bg-brand-dark text-slate-100 min-h-screen flex flex-col font-sans selection:bg-brand-blue/30 selection:text-white">
+
+    <div class="container max-w-5xl mx-auto px-4 py-8 flex-1 flex flex-col">
+        <!-- 头部 branding -->
+        <header class="mb-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-brand-border pb-6">
+                <div class="flex items-center gap-4">
+                    <div class="bg-brand-blue/10 p-2.5 rounded-xl border border-brand-blue/20">
+                        <svg class="h-10 w-10 text-brand-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+                            <line x1="7" y1="2" x2="7" y2="22"></line>
+                            <line x1="17" y1="2" x2="17" y2="22"></line>
+                            <line x1="2" y1="12" x2="22" y2="12"></line>
+                            <line x1="2" y1="7" x2="7" y2="7"></line>
+                            <line x1="2" y1="17" x2="7" y2="17"></line>
+                            <line x1="17" y1="17" x2="22" y2="17"></line>
+                            <line x1="17" y1="7" x2="22" y2="7"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-2xl font-bold tracking-tight">Spine序列帧与骨骼动画生成器</h1>
+                        </div>
+                        <p class="text-sm text-slate-400 mt-1">上传贴图并在本地直接配置导出带有骨骼及事件参数的轻量级 Spine 动画</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主操作区 -->
+        <main class="flex-1 flex flex-col">
+            <!-- 模式选择 Tab -->
+            <div class="flex border-b border-brand-border/60 mb-6 gap-6">
+                <button id="modeSequenceBtn" class="py-2.5 px-4 text-sm font-semibold border-b-2 border-brand-blue text-brand-blue focus:outline-none transition-colors">
+                    🎞️ 序列帧动画模式
+                </button>
+                <button id="modeSkeletalBtn" class="py-2.5 px-4 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 focus:outline-none transition-colors">
+                    🦴 骨骼动画模式 (单图换皮)
+                </button>
+            </div>
+
+            <!-- 动画组统一容器 -->
+            <div id="animationGroups" class="space-y-6 mb-8">
+                <!-- 由 JavaScript 动态追加/渲染 -->
+            </div>
+
+            <!-- 全局动作栏 -->
+            <div class="bg-brand-card border border-brand-border rounded-xl p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-2">
+                    <button id="loadPresetButton" class="bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white font-semibold px-4 py-2 rounded-lg transition-colors focus:outline-none text-sm shadow-md">
+                        ✨ 加载 slots 序列帧示例
+                    </button>
+                    <button id="addGroupButton" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-brand-border font-semibold px-4 py-2 rounded-lg transition-colors focus:outline-none text-sm">
+                        + 添加组
+                    </button>
+                    <div id="batchAddContainer" class="flex items-center gap-1">
+                        <input type="number" id="batchCountInput" min="1" max="100" value="5" class="bg-brand-dark border border-brand-border text-slate-100 rounded-lg px-1.5 py-2 text-xs w-12 text-center focus:outline-none focus:border-brand-blue [&::-webkit-inner-spin-button]:opacity-100">
+                        <button id="batchAddButton" class="bg-slate-700/50 hover:bg-slate-600/60 text-slate-300 border border-brand-border/60 font-semibold px-2.5 py-2 rounded-lg transition-colors focus:outline-none text-xs whitespace-nowrap">
+                            批量添加
+                        </button>
+                    </div>
+                    <button id="importCsvButton" class="bg-slate-700/50 hover:bg-slate-600/60 text-slate-300 border border-brand-border/60 px-2 py-2 rounded-lg transition-colors focus:outline-none text-sm leading-none" title="上传表格批量创建">
+                        📋
+                    </button>
+                    <input type="file" id="csvFileInput" accept=".csv,.tsv,.txt" class="hidden">
+                </div>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <label for="outputFileName" class="text-sm text-slate-400 whitespace-nowrap">导出文件名:</label>
+                        <input type="text" id="outputFileName" class="bg-brand-dark border border-brand-border text-slate-100 rounded-lg px-3 py-2 text-sm w-40 focus:outline-none focus:border-brand-blue" value="animation">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="spineVersion" class="text-sm text-slate-400 whitespace-nowrap">Spine版本:</label>
+                        <select id="spineVersion" class="bg-brand-dark border border-brand-border text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-blue cursor-pointer">
+                            <option value="3.8.75">3.8.75</option>
+                            <option value="3.8.99" selected>3.8.99</option>
+                            <option value="4.2.43">4.2.43</option>
+                        </select>
+                    </div>
+                    <button id="uploadButton" class="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold px-6 py-2.5 rounded-lg transition-all focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-brand-blue/20" disabled>
+                        生成 Spine 动画
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <footer class="mt-12 py-6 border-t border-brand-border/60 text-center flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-4 font-mono">
+            <div>本地沙盒运行，完全离线</div>
+        </footer>
+    </div>
+
+    <div id="toastContainer" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <script>
+        // --- 核心业务状态管理 ---
+        const state = {
+            currentMode: "sequence", // "sequence" | "skeletal"
+            groups: [],
+            outputFileName: "animation",
+            spineVersion: "3.8.99"
+        };
+
+        const groupPlayers = {};
+
+        const naturalSort = (a, b) => {
+            return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+        };
+
+        function sanitizeName(str) {
+            return str.replace(/[\s\.]+/g, '_');
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'px-4 py-2.5 rounded-lg shadow-2xl text-xs font-semibold tracking-wide border transition-all duration-300 transform translate-y-[-20px] opacity-0 flex items-center gap-2';
+            
+            if (type === 'success') {
+                toast.className += ' bg-emerald-950/90 border-emerald-500/30 text-emerald-400';
+            } else if (type === 'error') {
+                toast.className += ' bg-rose-950/90 border-rose-500/30 text-rose-400';
+            } else {
+                toast.className += ' bg-slate-900/90 border-slate-700/30 text-slate-300';
+            }
+            
+            toast.textContent = message;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-[-20px]', 'opacity-0');
+            }, 50);
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-[-20px]', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- 核心数学：骨骼模式 Canvas 动效插值算法 ---
+        function getSkeletalTransform(type, t) {
+            let symbol = { scaleX: 1, scaleY: 1, rotate: 0, alpha: 1, tint: '#ffffff', x: 0, y: 0 };
+
+            if (type === 'in') {
+                const c1 = 1.70158;
+                const c3 = c1 + 1;
+                const easeSym = t >= 1 ? 1 : 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+                symbol.scaleX = Math.max(0, easeSym);
+                symbol.scaleY = Math.max(0, easeSym);
+                symbol.alpha = Math.min(1, t * 2.5);
+            } 
+            else if (type === 'idle') {
+                const angle = t * Math.PI * 2;
+                symbol.scaleX = 1 + 0.04 * Math.sin(angle);
+                symbol.scaleY = 1 - 0.04 * Math.sin(angle);
+                symbol.y = -5 * Math.sin(angle); 
+            } 
+            else if (type === 'loop') {
+                symbol.rotate = t * 360;
+                const pulse = 1 + 0.06 * Math.sin(t * Math.PI * 4);
+                symbol.scaleX = pulse;
+                symbol.scaleY = pulse;
+            } 
+            else if (type === 'win') {
+                if (t < 0.2) {
+                    const progress = t / 0.2;
+                    symbol.scaleX = 1 + 0.35 * progress;
+                    symbol.scaleY = 1 - 0.35 * progress;
+                } else if (t < 0.5) {
+                    const progress = (t - 0.2) / 0.3;
+                    symbol.scaleX = 1.35 - 0.65 * progress;
+                    symbol.scaleY = 0.65 + 0.75 * progress;
+                } else {
+                    const progress = (t - 0.5) / 0.5;
+                    symbol.scaleX = 0.7 + 0.3 * Math.sin(progress * Math.PI);
+                    symbol.scaleY = 1.4 - 0.4 * Math.sin(progress * Math.PI);
+                }
+                symbol.rotate = 15 * Math.sin(t * Math.PI * 4);
+                
+                if (Math.floor(t * 12) % 2 === 0) {
+                    symbol.tint = '#ffd700'; 
+                }
+            } 
+            else if (type === 'gray') {
+                symbol.tint = '#666666';
+                const angle = t * Math.PI * 2;
+                symbol.scaleX = 1 + 0.015 * Math.sin(angle);
+                symbol.scaleY = 1 - 0.015 * Math.sin(angle);
+            } 
+            else if (type === 'out') {
+                symbol.scaleX = Math.max(0, 1.0 - t);
+                symbol.scaleY = Math.max(0, 1.0 - t);
+                symbol.rotate = -t * 180;
+                symbol.alpha = Math.max(0, 1.0 - t);
+            }
+
+            return { symbol };
+        }
+
+        function drawTintedImage(ctx, img, x, y, w, h, tintColor) {
+            if (tintColor === '#ffffff') {
+                ctx.drawImage(img, x, y, w, h);
+                return;
+            }
+            const offscreen = document.createElement('canvas');
+            offscreen.width = img.width;
+            offscreen.height = img.height;
+            const octx = offscreen.getContext('2d');
+            
+            octx.drawImage(img, 0, 0);
+            octx.globalCompositeOperation = 'source-atop';
+            octx.fillStyle = tintColor;
+            octx.fillRect(0, 0, img.width, img.height);
+            
+            ctx.save();
+            ctx.drawImage(img, x, y, w, h);
+            ctx.globalCompositeOperation = 'multiply';
+            ctx.drawImage(offscreen, x, y, w, h);
+            ctx.restore();
+        }
+
+        // --- 核心：切换工作模式 ---
+        function switchMode(mode) {
+            state.currentMode = mode;
+            const seqBtn = document.getElementById('modeSequenceBtn');
+            const skeBtn = document.getElementById('modeSkeletalBtn');
+            const loadPresetBtn = document.getElementById('loadPresetButton');
+
+            if (mode === 'sequence') {
+                seqBtn.className = "py-2.5 px-4 text-sm font-semibold border-b-2 border-brand-blue text-brand-blue focus:outline-none transition-colors";
+                skeBtn.className = "py-2.5 px-4 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 focus:outline-none transition-colors";
+                loadPresetBtn.textContent = "✨ 加载 slots 序列帧示例";
+            } else {
+                skeBtn.className = "py-2.5 px-4 text-sm font-semibold border-b-2 border-brand-blue text-brand-blue focus:outline-none transition-colors";
+                seqBtn.className = "py-2.5 px-4 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 focus:outline-none transition-colors";
+                loadPresetBtn.textContent = "✨ 加载 slots 骨骼示例";
+            }
+
+            // 清空当前的组以防冲突
+            state.groups.forEach(g => stopAnimLoop(g.id));
+            state.groups = [];
+            document.getElementById('animationGroups').innerHTML = '';
+
+            // 默认添加一个空组
+            addAnimationGroup();
+            updateGenerateButtonState();
+        }
+
+        // --- 添加动画组 ---
+        function addAnimationGroup() {
+            const id = `group-${Date.now()}`;
+            const groupObj = {
+                id,
+                animationName: `action${state.groups.length + 1}`,
+                frameRate: 15,
+                mode: "multiple", 
+                skeletalTemplate: "idle", // 骨骼动画默认模版
+                files: [], 
+                singleImage: null, 
+                sliceRows: 1,
+                sliceCols: 1,
+                events: [] 
+            };
+            
+            state.groups.push(groupObj);
+            renderGroupCard(groupObj);
+            updateGroupLabels();
+            updateGenerateButtonState();
+        }
+
+        // --- 渲染动画组 DOM ---
+        function renderGroupCard(group) {
+            const container = document.getElementById('animationGroups');
+            const card = document.createElement('section');
+            card.id = group.id;
+            card.dataset.groupId = group.id;
+            card.className = "bg-brand-card border border-brand-border rounded-xl p-6 relative animation-group";
+
+            if (state.currentMode === 'skeletal') {
+                // 骨骼动画模式 UI（精简为单图上传 + 模版选择）
+                card.innerHTML = `
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4 border-b border-brand-border/60 pb-4">
+                        <h3 class="text-md font-bold text-slate-200 flex items-center gap-2">
+                            <span class="bg-brand-blue/10 text-brand-blue border border-brand-blue/20 rounded-lg px-2.5 py-0.5 text-sm group-idx-label"></span>
+                        </h3>
+                        <div class="flex flex-wrap items-center gap-4">
+                            <div class="flex items-center gap-1.5">
+                                <label class="text-xs text-slate-400">动画名称:</label>
+                                <input type="text" class="group-anim-name bg-brand-dark border border-brand-border text-slate-100 rounded px-2.5 py-1 text-xs w-28 focus:outline-none focus:border-brand-blue" value="${group.animationName}">
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <label class="text-xs text-slate-400">骨骼动效模版:</label>
+                                <select class="group-skeletal-template bg-brand-dark border border-brand-border text-slate-100 rounded px-2 py-1 text-xs focus:outline-none focus:border-brand-blue cursor-pointer">
+                                    <option value="idle" ${group.skeletalTemplate === 'idle' ? 'selected' : ''}>idle (微呼吸)</option>
+                                    <option value="in" ${group.skeletalTemplate === 'in' ? 'selected' : ''}>in (淡入落地弹跳)</option>
+                                    <option value="loop" ${group.skeletalTemplate === 'loop' ? 'selected' : ''}>loop (旋转)</option>
+                                    <option value="win" ${group.skeletalTemplate === 'win' ? 'selected' : ''}>win (强力缩放变形)</option>
+                                    <option value="gray" ${group.skeletalTemplate === 'gray' ? 'selected' : ''}>gray (置灰静态)</option>
+                                    <option value="out" ${group.skeletalTemplate === 'out' ? 'selected' : ''}>out (旋转缩回)</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <label class="text-xs text-slate-400">帧率 (FPS):</label>
+                                <input type="number" class="group-frame-rate bg-brand-dark border border-brand-border text-slate-100 rounded px-2.5 py-1 text-xs w-16 focus:outline-none focus:border-brand-blue" min="1" max="60" value="${group.frameRate}">
+                            </div>
+                            <button class="remove-group-btn text-slate-500 hover:text-rose-400 text-lg font-bold px-1 transition-colors" title="移除此动画组">×</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- 左侧: 贴图上传 -->
+                        <div class="flex flex-col justify-center">
+                            <div class="upload-area border-2 border-dashed border-brand-border hover:border-brand-blue/50 rounded-xl p-6 text-center cursor-pointer transition-colors bg-brand-dark/40 flex flex-col items-center justify-center">
+                                <svg class="h-10 w-10 text-slate-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <p class="text-xs text-slate-300 font-semibold">拖放单张换皮贴图到这里</p>
+                                <span class="mt-1 text-[10px] text-slate-500">点击选择单张 PNG 图标</span>
+                                <input type="file" class="group-single-file-input hidden" accept="image/*">
+                            </div>
+                        </div>
+
+                        <!-- 右侧: 骨骼预览区 -->
+                        <div class="selected-files bg-brand-dark/20 border border-brand-border/60 rounded-xl p-4 flex flex-col h-64">
+                            <div class="flex justify-between items-center mb-3 pb-2 border-b border-brand-border/40">
+                                <div class="flex gap-1">
+                                    <button class="preview-tab-btn px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-all bg-brand-blue/20 text-brand-blue border border-brand-blue/30 active-tab" data-tab="list">
+                                        贴图详情
+                                    </button>
+                                    <button class="preview-tab-btn px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-all text-slate-400 border border-transparent hover:text-slate-200" data-tab="anim">
+                                        动效预览
+                                    </button>
+                                </div>
+                                <button class="clear-group-files-btn text-[10px] text-rose-400 hover:text-rose-300 font-semibold disabled:opacity-40 disabled:cursor-not-allowed" disabled>清除</button>
+                            </div>
+                            <div class="files-preview-container flex-1 overflow-y-auto">
+                                <p class="text-xs text-slate-500 text-center py-16 empty-files-msg">暂无文件</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 事件设置 -->
+                    <div class="mt-4 border-t border-brand-border/40 pt-4">
+                        <details class="group-events-details">
+                            <summary class="text-xs font-semibold text-slate-400 hover:text-slate-200 cursor-pointer select-none flex items-center justify-between">
+                                <span>设置事件 (Spine Events)</span>
+                                <svg class="h-3.5 w-3.5 transform group-open:rotate-180 transition-transform text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </summary>
+                            <div class="mt-3 bg-brand-dark/40 rounded-lg p-4 border border-brand-border">
+                                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-3">
+                                    <span class="text-[10px] text-slate-500">可在序列帧指定时间点插入关键事件。支持整型、浮点与字符串参数</span>
+                                    <button class="add-event-btn bg-brand-blue/10 hover:bg-brand-blue/20 text-brand-blue text-[10px] font-semibold px-2.5 py-1 rounded border border-brand-blue/20 transition-colors">+ 添加事件</button>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left border-collapse text-[11px]">
+                                        <thead>
+                                            <tr class="border-b border-brand-border text-slate-400 font-medium">
+                                                <th class="py-1.5 pr-2 w-14">帧号</th>
+                                                <th class="py-1.5 pr-2">事件名称</th>
+                                                <th class="py-1.5 pr-2 w-16">整数(Int)</th>
+                                                <th class="py-1.5 pr-2 w-16">浮点(Float)</th>
+                                                <th class="py-1.5 pr-2">字符串(String)</th>
+                                                <th class="py-1.5 text-right w-12">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="events-tbody">
+                                            <tr class="empty-events-row"><td colspan="6" class="text-center text-slate-500 py-4">未配置任何事件</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                `;
+            } else {
+                // 经典序列帧模式 UI
+                card.innerHTML = `
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4 border-b border-brand-border/60 pb-4">
+                        <h3 class="text-md font-bold text-slate-200 flex items-center gap-2">
+                            <span class="bg-brand-blue/10 text-brand-blue border border-brand-blue/20 rounded-lg px-2.5 py-0.5 text-sm group-idx-label"></span>
+                        </h3>
+                        <div class="flex flex-wrap items-center gap-4">
+                            <div class="flex items-center gap-1.5">
+                                <label class="text-xs text-slate-400">动画名称:</label>
+                                <input type="text" class="group-anim-name bg-brand-dark border border-brand-border text-slate-100 rounded px-2.5 py-1 text-xs w-28 focus:outline-none focus:border-brand-blue" value="${group.animationName}">
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <label class="text-xs text-slate-400">帧率 (FPS):</label>
+                                <input type="number" class="group-frame-rate bg-brand-dark border border-brand-border text-slate-100 rounded px-2.5 py-1 text-xs w-16 focus:outline-none focus:border-brand-blue" min="1" max="60" value="${group.frameRate}">
+                            </div>
+                            <button class="remove-group-btn text-slate-500 hover:text-rose-400 text-lg font-bold px-1 transition-colors" title="移除此动画组">×</button>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-6 mb-4">
+                        <label class="inline-flex items-center cursor-pointer text-xs">
+                            <input type="radio" name="mode-${group.id}" value="multiple" class="group-mode-radio text-brand-blue focus:ring-0 cursor-pointer bg-brand-dark border-brand-border" checked>
+                            <span class="ml-2 text-slate-300">多图序列帧</span>
+                        </label>
+                        <label class="inline-flex items-center cursor-pointer text-xs">
+                            <input type="radio" name="mode-${group.id}" value="single" class="group-mode-radio text-brand-blue focus:ring-0 cursor-pointer bg-brand-dark border-brand-border">
+                            <span class="ml-2 text-slate-300">单图集切片</span>
+                        </label>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="flex flex-col justify-center">
+                            <div class="multiple-upload-container">
+                                <div class="upload-area border-2 border-dashed border-brand-border hover:border-brand-blue/50 rounded-xl p-6 text-center cursor-pointer transition-colors bg-brand-dark/40 flex flex-col items-center justify-center">
+                                    <svg class="h-10 w-10 text-slate-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                    </svg>
+                                    <p class="text-xs text-slate-300 font-semibold">拖放连续帧多图到这里</p>
+                                    <span class="mt-1 text-[10px] text-slate-500">支持批量选择多张 PNG/JPG</span>
+                                    <input type="file" class="group-file-input hidden" multiple accept="image/*">
+                                </div>
+                            </div>
+
+                            <div class="single-upload-container hidden space-y-3">
+                                <div class="upload-area border-2 border-dashed border-brand-border hover:border-brand-blue/50 rounded-xl p-5 text-center cursor-pointer transition-colors bg-brand-dark/40 flex flex-col items-center justify-center">
+                                    <svg class="h-10 w-10 text-slate-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <p class="text-xs text-slate-300 font-semibold">拖放整张精灵图集到这里</p>
+                                    <span class="mt-1 text-[10px] text-slate-500">点击选择单张 PNG 精灵图</span>
+                                    <input type="file" class="group-single-file-input hidden" accept="image/*">
+                                </div>
+                                <div class="flex gap-3 bg-brand-dark/60 border border-brand-border rounded-lg p-2.5">
+                                    <div class="flex-1">
+                                        <label class="block text-[10px] text-slate-400 mb-1">垂直切片 (行数):</label>
+                                        <input type="number" class="group-slice-rows bg-brand-card border border-brand-border text-slate-100 rounded px-2 py-1 text-xs w-full" min="1" value="1">
+                                    </div>
+                                    <div class="flex-1">
+                                        <label class="block text-[10px] text-slate-400 mb-1">水平切片 (列数):</label>
+                                        <input type="number" class="group-slice-cols bg-brand-card border border-brand-border text-slate-100 rounded px-2 py-1 text-xs w-full" min="1" value="1">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="selected-files bg-brand-dark/20 border border-brand-border/60 rounded-xl p-4 flex flex-col h-64">
+                            <div class="flex justify-between items-center mb-3 pb-2 border-b border-brand-border/40">
+                                <div class="flex gap-1">
+                                    <button class="preview-tab-btn px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-all bg-brand-blue/20 text-brand-blue border border-brand-blue/30 active-tab" data-tab="list">
+                                        帧列表 (<span class="files-count-label">0</span>)
+                                    </button>
+                                    <button class="preview-tab-btn px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-all text-slate-400 border border-transparent hover:text-slate-200" data-tab="anim">
+                                        动画预览
+                                    </button>
+                                </div>
+                                <button class="clear-group-files-btn text-[10px] text-rose-400 hover:text-rose-300 font-semibold disabled:opacity-40 disabled:cursor-not-allowed" disabled>清除</button>
+                            </div>
+                            <div class="files-preview-container flex-1 overflow-y-auto">
+                                <p class="text-xs text-slate-500 text-center py-16 empty-files-msg">暂无文件</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 border-t border-brand-border/40 pt-4">
+                        <details class="group-events-details">
+                            <summary class="text-xs font-semibold text-slate-400 hover:text-slate-200 cursor-pointer select-none flex items-center justify-between">
+                                <span>设置事件 (Spine Events)</span>
+                                <svg class="h-3.5 w-3.5 transform group-open:rotate-180 transition-transform text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </summary>
+                            <div class="mt-3 bg-brand-dark/40 rounded-lg p-4 border border-brand-border">
+                                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-3">
+                                    <span class="text-[10px] text-slate-500">可在序列帧指定时间点插入关键事件。支持整型、浮点与字符串参数</span>
+                                    <button class="add-event-btn bg-brand-blue/10 hover:bg-brand-blue/20 text-brand-blue text-[10px] font-semibold px-2.5 py-1 rounded border border-brand-blue/20 transition-colors">+ 添加事件</button>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left border-collapse text-[11px]">
+                                        <thead>
+                                            <tr class="border-b border-brand-border text-slate-400 font-medium">
+                                                <th class="py-1.5 pr-2 w-14">帧号</th>
+                                                <th class="py-1.5 pr-2">事件名称</th>
+                                                <th class="py-1.5 pr-2 w-16">整数(Int)</th>
+                                                <th class="py-1.5 pr-2 w-16">浮点(Float)</th>
+                                                <th class="py-1.5 pr-2">字符串(String)</th>
+                                                <th class="py-1.5 text-right w-12">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="events-tbody">
+                                            <tr class="empty-events-row"><td colspan="6" class="text-center text-slate-500 py-4">未配置任何事件</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                `;
+            }
+
+            container.appendChild(card);
+            bindGroupListeners(group, card);
+        }
+
+        // --- 绑定动画组中各元素事件监听 ---
+        function bindGroupListeners(group, card) {
+            const dropzone = card.querySelector('.upload-area');
+            const fileInput = card.querySelector('.group-file-input');
+            const singleFileInput = card.querySelector('.group-single-file-input');
+            const animNameInput = card.querySelector('.group-anim-name');
+            const frameRateInput = card.querySelector('.group-frame-rate');
+            const clearFilesBtn = card.querySelector('.clear-group-files-btn');
+            const addEventBtn = card.querySelector('.add-event-btn');
+
+            // 模式相关的监听器
+            const skeletalTemplateSelect = card.querySelector('.group-skeletal-template');
+            const modeRadios = card.querySelectorAll('.group-mode-radio');
+            const multipleContainer = card.querySelector('.multiple-upload-container');
+            const singleContainer = card.querySelector('.single-upload-container');
+
+            // 拖放绑定
+            card.querySelectorAll('.upload-area').forEach((zone) => {
+                zone.addEventListener('click', () => {
+                    if (state.currentMode === 'skeletal') {
+                        singleFileInput.click();
+                    } else {
+                        if (group.mode === 'multiple') {
+                            fileInput.click();
+                        } else {
+                            singleFileInput.click();
+                        }
+                    }
+                });
+                
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    zone.classList.add('border-brand-blue', 'bg-brand-blue/5');
+                });
+                
+                zone.addEventListener('dragleave', () => {
+                    zone.classList.remove('border-brand-blue', 'bg-brand-blue/5');
+                });
+                
+                zone.addEventListener('drop', async (e) => {
+                    e.preventDefault();
+                    zone.classList.remove('border-brand-blue', 'bg-brand-blue/5');
+                    const droppedFiles = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+                    if (droppedFiles.length > 0) {
+                        if (state.currentMode === 'skeletal') {
+                            await handleSkeletalSingleFile(group, droppedFiles[0]);
+                        } else {
+                            if (group.mode === 'multiple') {
+                                await handleMultipleFiles(group, droppedFiles);
+                            } else {
+                                await handleSingleFile(group, droppedFiles[0]);
+                            }
+                        }
+                    }
+                });
+            });
+
+            if (fileInput) {
+                fileInput.addEventListener('change', async (e) => {
+                    const selected = Array.from(e.target.files);
+                    await handleMultipleFiles(group, selected);
+                    fileInput.value = ''; 
+                });
+            }
+
+            if (singleFileInput) {
+                singleFileInput.addEventListener('change', async (e) => {
+                    if (e.target.files.length > 0) {
+                        if (state.currentMode === 'skeletal') {
+                            await handleSkeletalSingleFile(group, e.target.files[0]);
+                        } else {
+                            await handleSingleFile(group, e.target.files[0]);
+                        }
+                    }
+                    singleFileInput.value = ''; 
+                });
+            }
+
+            // 基础设置监听
+            animNameInput.addEventListener('input', (e) => {
+                group.animationName = e.target.value.trim() || 'action';
+                reassignFrameNames(group);
+                updateGroupFilesUI(group);
+            });
+
+            frameRateInput.addEventListener('input', (e) => {
+                group.frameRate = parseInt(e.target.value) || 15;
+                const activeTab = card.querySelector('.preview-tab-btn.active-tab');
+                if (activeTab && activeTab.dataset.tab === 'anim') {
+                    startAnimLoop(group);
+                }
+            });
+
+            if (skeletalTemplateSelect) {
+                skeletalTemplateSelect.addEventListener('change', (e) => {
+                    group.skeletalTemplate = e.target.value;
+                    const activeTab = card.querySelector('.preview-tab-btn.active-tab');
+                    if (activeTab && activeTab.dataset.tab === 'anim') {
+                        startAnimLoop(group);
+                    }
+                });
+            }
+
+            // 序列帧下的多图/单图模式切换
+            if (modeRadios) {
+                modeRadios.forEach(radio => {
+                    radio.addEventListener('change', (e) => {
+                        group.mode = e.target.value;
+                        if (group.mode === 'multiple') {
+                            multipleContainer.classList.remove('hidden');
+                            singleContainer.classList.add('hidden');
+                        } else {
+                            multipleContainer.classList.add('hidden');
+                            singleContainer.classList.remove('hidden');
+                        }
+                        clearFiles(group);
+                    });
+                });
+            }
+
+            // 清除与移除组
+            clearFilesBtn.addEventListener('click', () => clearFiles(group));
+            card.querySelector('.remove-group-btn').addEventListener('click', () => removeAnimationGroup(group.id));
+
+            // 切片微调
+            const rowsInput = card.querySelector('.group-slice-rows');
+            const colsInput = card.querySelector('.group-slice-cols');
+            if (rowsInput && colsInput) {
+                rowsInput.addEventListener('input', (e) => {
+                    group.sliceRows = parseInt(e.target.value) || 1;
+                    triggerSliceReprocess(group);
+                });
+                colsInput.addEventListener('input', (e) => {
+                    group.sliceCols = parseInt(e.target.value) || 1;
+                    triggerSliceReprocess(group);
+                });
+            }
+
+            // tab 切换
+            card.querySelectorAll('.preview-tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const tab = btn.dataset.tab;
+                    card.querySelectorAll('.preview-tab-btn').forEach(b => {
+                        b.classList.remove('bg-brand-blue/20', 'text-brand-blue', 'border-brand-blue/30', 'active-tab');
+                        b.classList.add('text-slate-400', 'border-transparent');
+                    });
+                    btn.classList.add('bg-brand-blue/20', 'text-brand-blue', 'border-brand-blue/30', 'active-tab');
+                    btn.classList.remove('text-slate-400', 'border-transparent');
+
+                    if (tab === 'anim') {
+                        startAnimLoop(group);
+                    } else {
+                        stopAnimLoop(group.id);
+                        updateGroupFilesUI(group);
+                    }
+                });
+            });
+
+            addEventBtn.addEventListener('click', () => {
+                group.events.push({ frame: 1, name: "effect", intVal: 0, floatVal: 0.0, stringVal: "" });
+                updateEventsUI(group);
+            });
+        }
+
+        // --- 骨骼模式下：加载单张贴图 ---
+        async function handleSkeletalSingleFile(group, file) {
+            showToast("正在读取贴图文件...", "info");
+            const img = await loadImageFromFile(file);
+            group.files = [{
+                file,
+                img,
+                name: file.name,
+                regionName: sanitizeName(group.animationName)
+            }];
+            switchToTab(group, 'list');
+            updateGenerateButtonState();
+            showToast("成功上传单张骨骼贴图！");
+        }
+
+        // --- 序列帧模式下：多图加载 ---
+        async function handleMultipleFiles(group, filesList) {
+            showToast(`正在加载 ${filesList.length} 张图片...`, 'info');
+            const loadedPromises = filesList.map(file => {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => resolve({ file, img, name: file.name });
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
+
+            const loaded = await Promise.all(loadedPromises);
+            loaded.sort(naturalSort);
+            
+            group.files = loaded.map((item, idx) => ({
+                img: item.img,
+                file: item.file,
+                name: item.name,
+                regionName: '' 
+            }));
+
+            reassignFrameNames(group);
+            switchToTab(group, 'list');
+            updateGenerateButtonState();
+            showToast("图片读取成功！已按名称自动自然排序。");
+        }
+
+        // --- 序列帧模式下：整图集切片加载 ---
+        async function handleSingleFile(group, file) {
+            showToast("正在读取精灵大图...", 'info');
+            const img = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const image = new Image();
+                    image.onload = () => resolve(image);
+                    image.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+
+            group.singleImage = { file, img };
+            await triggerSliceReprocess(group);
+        }
+
+        async function triggerSliceReprocess(group) {
+            if (!group.singleImage) return;
+            const rows = parseInt(group.sliceRows) || 1;
+            const cols = parseInt(group.sliceCols) || 1;
+            const sourceImg = group.singleImage.img;
+
+            const cellW = sourceImg.naturalWidth / cols;
+            const cellH = sourceImg.naturalHeight / rows;
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = cellW;
+            tempCanvas.height = cellH;
+            const ctx = tempCanvas.getContext('2d');
+
+            const slicedFiles = [];
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    ctx.clearRect(0, 0, cellW, cellH);
+                    ctx.drawImage(sourceImg, c * cellW, r * cellH, cellW, cellH, 0, 0, cellW, cellH);
+
+                    const blob = await new Promise(res => tempCanvas.toBlob(res, 'image/png'));
+                    const sliceFile = new File([blob], `${group.animationName}_slice_${r}_${c}.png`, { type: 'image/png' });
+                    
+                    const sliceImg = new Image();
+                    sliceImg.src = tempCanvas.toDataURL();
+                    await new Promise(res => sliceImg.onload = res);
+
+                    slicedFiles.push({
+                        img: sliceImg,
+                        file: sliceFile,
+                        name: `${group.animationName}_slice_${r}_${c}.png`
+                    });
+                }
+            }
+
+            group.files = slicedFiles;
+            reassignFrameNames(group);
+            switchToTab(group, 'list');
+            updateGenerateButtonState();
+            showToast(`已成功切分为 ${slicedFiles.length} 个子画面！`);
+        }
+
+        function reassignFrameNames(group) {
+            group.files.forEach((fileObj, idx) => {
+                if (state.currentMode === 'skeletal') {
+                    fileObj.regionName = sanitizeName(group.animationName);
+                } else {
+                    const paddedIdx = String(idx).padStart(3, '0');
+                    fileObj.regionName = sanitizeName(`${group.animationName}_${paddedIdx}`);
+                }
+            });
+        }
+
+        function switchToTab(group, tabName) {
+            const card = document.getElementById(group.id);
+            if (!card) return;
+            const listBtn = card.querySelector('.preview-tab-btn[data-tab="list"]');
+            const animBtn = card.querySelector('.preview-tab-btn[data-tab="anim"]');
+            
+            if (tabName === 'list') {
+                animBtn.classList.remove('bg-brand-blue/20', 'text-brand-blue', 'border-brand-blue/30', 'active-tab');
+                animBtn.classList.add('text-slate-400', 'border-transparent');
+                listBtn.classList.add('bg-brand-blue/20', 'text-brand-blue', 'border-brand-blue/30', 'active-tab');
+                listBtn.classList.remove('text-slate-400', 'border-transparent');
+                stopAnimLoop(group.id);
+                updateGroupFilesUI(group);
+            } else {
+                listBtn.classList.remove('bg-brand-blue/20', 'text-brand-blue', 'border-brand-blue/30', 'active-tab');
+                listBtn.classList.add('text-slate-400', 'border-transparent');
+                animBtn.classList.add('bg-brand-blue/20', 'text-brand-blue', 'border-brand-blue/30', 'active-tab');
+                animBtn.classList.remove('text-slate-400', 'border-transparent');
+                startAnimLoop(group);
+            }
+        }
+
+        function updateGroupFilesUI(group) {
+            const card = document.getElementById(group.id);
+            if (!card) return;
+
+            const countLabel = card.querySelector('.files-count-label');
+            const previewContainer = card.querySelector('.files-preview-container');
+            const clearBtn = card.querySelector('.clear-group-files-btn');
+
+            if (countLabel) countLabel.textContent = group.files.length;
+
+            if (group.files.length > 0) {
+                clearBtn.disabled = false;
+                previewContainer.innerHTML = '';
+                
+                if (state.currentMode === 'skeletal') {
+                    // 骨骼模式单图预览布局
+                    const item = document.createElement('div');
+                    item.className = "flex flex-col items-center justify-center h-full p-2 gap-2";
+                    const img = document.createElement('img');
+                    img.src = group.files[0].img.src;
+                    img.className = "max-h-36 max-w-full object-contain border border-brand-border rounded p-1 bg-slate-950/20";
+                    const tooltip = document.createElement('div');
+                    tooltip.className = "text-xs text-slate-400 mt-1";
+                    tooltip.textContent = `插槽贴图名: ${group.files[0].regionName}.png`;
+                    item.appendChild(img);
+                    item.appendChild(tooltip);
+                    previewContainer.appendChild(item);
+                } else {
+                    const grid = document.createElement('div');
+                    grid.className = "grid grid-cols-4 sm:grid-cols-5 gap-2 p-1";
+
+                    group.files.forEach((fileObj) => {
+                        const item = document.createElement('div');
+                        item.className = "relative bg-slate-950/60 border border-brand-border rounded p-1 flex flex-col items-center justify-center aspect-square";
+
+                        const img = document.createElement('img');
+                        img.src = fileObj.img.src;
+                        img.className = "max-h-[85%] max-w-full object-contain rounded";
+
+                        const tooltip = document.createElement('div');
+                        tooltip.className = "absolute bottom-0 inset-x-0 bg-slate-950/80 text-[9px] text-slate-400 text-center truncate py-0.5 rounded-b";
+                        tooltip.textContent = fileObj.regionName;
+
+                        item.appendChild(img);
+                        item.appendChild(tooltip);
+                        grid.appendChild(item);
+                    });
+
+                    previewContainer.appendChild(grid);
+                }
+            } else {
+                clearBtn.disabled = true;
+                previewContainer.innerHTML = `<p class="text-xs text-slate-500 text-center py-16 empty-files-msg">暂无文件</p>`;
+            }
+        }
+
+        // --- 实时动效循环渲染器（自适应序列帧/骨骼模式） ---
+        function startAnimLoop(group) {
+            const card = document.getElementById(group.id);
+            if (!card) return;
+            const previewContainer = card.querySelector('.files-preview-container');
+
+            stopAnimLoop(group.id);
+
+            if (group.files.length === 0) {
+                previewContainer.innerHTML = `<p class="text-xs text-slate-500 text-center py-16 empty-files-msg">暂无贴图，无法预览</p>`;
+                return;
+            }
+
+            previewContainer.innerHTML = '';
+            const playerWrapper = document.createElement('div');
+            playerWrapper.className = "flex flex-col items-center justify-center h-full relative py-2";
+
+            const canvas = document.createElement('canvas');
+            canvas.className = "max-h-36 max-w-full object-contain border border-brand-border bg-slate-950/20 rounded p-1";
+            
+            const firstImg = group.files[0].img;
+            canvas.width = 150;
+            canvas.height = 150;
+            const ctx = canvas.getContext('2d');
+
+            const label = document.createElement('div');
+            label.className = "text-[10px] text-slate-400 font-mono mt-3 text-center";
+
+            playerWrapper.appendChild(canvas);
+            playerWrapper.appendChild(label);
+            previewContainer.appendChild(playerWrapper);
+
+            let frameIdx = 0;
+            const fps = group.frameRate || 30;
+            const totalFrames = fps * 1.6; // 标准动画循环跨度 1.6s
+
+            const tick = () => {
+                if (group.files.length === 0) return;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                const t = frameIdx / totalFrames;
+                const img = group.files[0].img;
+                
+                if (state.currentMode === 'skeletal') {
+                    // 骨骼模式：动态计算插值并绘制单图
+                    const { symbol } = getSkeletalTransform(group.skeletalTemplate, t);
+                    const cx = canvas.width / 2;
+                    const cy = canvas.height / 2;
+                    
+                    ctx.save();
+                    ctx.translate(cx + symbol.x, cy + symbol.y);
+                    ctx.scale(symbol.scaleX, symbol.scaleY);
+                    ctx.rotate(symbol.rotate * Math.PI / 180);
+                    ctx.globalAlpha = symbol.alpha;
+                    drawTintedImage(ctx, img, -50, -50, 100, 100, symbol.tint);
+                    ctx.restore();
+                    
+                    label.textContent = `骨骼预览 | 动作模版: ${group.skeletalTemplate} | 进度: ${Math.round(t * 100)}%`;
+                    frameIdx = (frameIdx + 1) % totalFrames;
+                } else {
+                    // 序列帧模式：常规逐帧绘制
+                    const currentFrame = group.files[frameIdx % group.files.length];
+                    ctx.drawImage(currentFrame.img, 0, 0, canvas.width, canvas.height);
+                    label.textContent = `帧: ${(frameIdx % group.files.length) + 1}/${group.files.length} - ${currentFrame.regionName}`;
+                    frameIdx = (frameIdx + 1) % group.files.length;
+                }
+            };
+
+            tick(); 
+            const interval = 1000 / fps;
+            groupPlayers[group.id] = setInterval(tick, interval);
+        }
+
+        function stopAnimLoop(id) {
+            if (groupPlayers[id]) {
+                clearInterval(groupPlayers[id]);
+                delete groupPlayers[id];
+            }
+        }
+
+        function updateEventsUI(group) {
+            const card = document.getElementById(group.id);
+            if (!card) return;
+            const tbody = card.querySelector('.events-tbody');
+
+            tbody.innerHTML = '';
+
+            if (group.events.length === 0) {
+                tbody.innerHTML = `<tr class="empty-events-row"><td colspan="6" class="text-center text-slate-500 py-4">未配置任何事件</td></tr>`;
+                return;
+            }
+
+            group.events.forEach((ev, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-brand-border text-slate-300 hover:bg-slate-900/30";
+                tr.dataset.idx = idx;
+
+                tr.innerHTML = `
+                    <td class="py-1.5 pr-2">
+                        <input type="number" class="ev-frame bg-brand-dark border border-brand-border text-slate-100 rounded px-1.5 py-0.5 text-xs w-12 focus:outline-none focus:border-brand-blue" min="1" max="${group.files.length || 100}" value="${ev.frame}">
+                    </td>
+                    <td class="py-1.5 pr-2">
+                        <input type="text" class="ev-name bg-brand-dark border border-brand-border text-slate-100 rounded px-1.5 py-0.5 text-xs w-full focus:outline-none focus:border-brand-blue" value="${ev.name}" placeholder="事件名">
+                    </td>
+                    <td class="py-1.5 pr-2">
+                        <input type="number" class="ev-int bg-brand-dark border border-brand-border text-slate-100 rounded px-1.5 py-0.5 text-xs w-14 focus:outline-none focus:border-brand-blue" value="${ev.intVal}">
+                    </td>
+                    <td class="py-1.5 pr-2">
+                        <input type="number" step="any" class="ev-float bg-brand-dark border border-brand-border text-slate-100 rounded px-1.5 py-0.5 text-xs w-14 focus:outline-none focus:border-brand-blue" value="${ev.floatVal}">
+                    </td>
+                    <td class="py-1.5 pr-2">
+                        <input type="text" class="ev-string bg-brand-dark border border-brand-border text-slate-100 rounded px-1.5 py-0.5 text-xs w-full focus:outline-none focus:border-brand-blue" value="${ev.stringVal}" placeholder="参数">
+                    </td>
+                    <td class="py-1.5 text-right">
+                        <button class="remove-ev-btn text-rose-400 hover:text-rose-300 font-bold focus:outline-none">删除</button>
+                    </td>
+                `;
+
+                tr.querySelector('.ev-frame').addEventListener('input', (e) => { ev.frame = Math.max(1, parseInt(e.target.value) || 1); });
+                tr.querySelector('.ev-name').addEventListener('input', (e) => { ev.name = e.target.value; });
+                tr.querySelector('.ev-int').addEventListener('input', (e) => { ev.intVal = parseInt(e.target.value) || 0; });
+                tr.querySelector('.ev-float').addEventListener('input', (e) => { ev.floatVal = parseFloat(e.target.value) || 0.0; });
+                tr.querySelector('.ev-string').addEventListener('input', (e) => { ev.stringVal = e.target.value; });
+                tr.querySelector('.remove-ev-btn').addEventListener('click', () => {
+                    group.events.splice(idx, 1);
+                    updateEventsUI(group);
+                });
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        function clearFiles(group) {
+            stopAnimLoop(group.id);
+            group.files = [];
+            group.singleImage = null;
+            group.events = [];
+            
+            const card = document.getElementById(group.id);
+            if (card) {
+                const fileInput = card.querySelector('.group-file-input');
+                const singleInput = card.querySelector('.group-single-file-input');
+                if (fileInput) fileInput.value = '';
+                if (singleInput) singleInput.value = '';
+            }
+
+            switchToTab(group, 'list');
+            updateEventsUI(group);
+            updateGenerateButtonState();
+            showToast("清除成功！", 'error');
+        }
+
+        function updateGroupLabels() {
+            const cards = document.querySelectorAll('.animation-group');
+            cards.forEach((card, idx) => {
+                card.querySelector('.group-idx-label').textContent = `动画组 ${idx + 1}`;
+            });
+        }
+
+        function removeAnimationGroup(id) {
+            if (state.groups.length <= 1) {
+                showToast("至少需保留一个动画组！", "error");
+                return;
+            }
+            stopAnimLoop(id);
+            state.groups = state.groups.filter(g => g.id !== id);
+            document.getElementById(id).remove();
+            updateGroupLabels();
+            updateGenerateButtonState();
+            showToast("成功移除动画组", "info");
+        }
+
+        function updateGenerateButtonState() {
+            const hasFiles = state.groups.some(g => g.files.length > 0);
+            document.getElementById('uploadButton').disabled = !hasFiles;
+        }
+
+        // --- 核心打包调度分流 ---
+        async function buildAndDownloadSpine() {
+            if (state.currentMode === 'skeletal') {
+                await buildAndDownloadSkeletalSpine();
+            } else {
+                await buildAndDownloadSequenceSpine();
+            }
+        }
+
+        // --- 1. 编译并打包为：骨骼动画模式 (单图换皮) ---
+        async function buildAndDownloadSkeletalSpine() {
+            showToast("正在编译打包骨骼动画资源...", "info");
+
+            const activeGroups = state.groups.filter(g => g.files.length > 0);
+            if (activeGroups.length === 0) {
+                showToast("请为动画组上传至少一张贴图！", "error");
+                return;
+            }
+
+            // 获取最大尺寸作为网格规格
+            let maxW = 0;
+            let maxH = 0;
+            activeGroups.forEach(g => {
+                const f = g.files[0];
+                if (f.img.width > maxW) maxW = f.img.width;
+                if (f.img.height > maxH) maxH = f.img.height;
+            });
+
+            const totalImages = activeGroups.length;
+            const cols = Math.min(totalImages, 10);
+            const rows = Math.ceil(totalImages / cols);
+
+            const atlasCanvas = document.createElement('canvas');
+            atlasCanvas.width = cols * maxW;
+            atlasCanvas.height = rows * maxH;
+            const ctx = atlasCanvas.getContext('2d');
+
+            let atlasText = "";
+            atlasText += `${state.outputFileName}.png\n`;
+            atlasText += `size: ${atlasCanvas.width},${atlasCanvas.height}\n`;
+            atlasText += `format: RGBA8888\n`;
+            atlasText += `filter: Linear,Linear\n`;
+            atlasText += `repeat: none\n`;
+
+            const skinsAttachments = {};
+
+            activeGroups.forEach((g, idx) => {
+                const f = g.files[0];
+                const c = idx % cols;
+                const r = Math.floor(idx / cols);
+                const x = c * maxW;
+                const y = r * maxH;
+
+                ctx.drawImage(f.img, x, y);
+
+                const regionName = sanitizeName(g.animationName);
+
+                atlasText += `${regionName}\n`;
+                atlasText += `  rotate: false\n`;
+                atlasText += `  xy: ${x}, ${y}\n`;
+                atlasText += `  size: ${f.img.width}, ${f.img.height}\n`;
+                atlasText += `  orig: ${f.img.width}, ${f.img.height}\n`;
+                atlasText += `  offset: 0, 0\n`;
+                atlasText += `  index: -1\n`;
+
+                skinsAttachments[regionName] = {
+                    "x": 0,
+                    "y": 0,
+                    "width": f.img.width,
+                    "height": f.img.height
+                };
+            });
+
+            // 初始 Setup 姿势下的插槽贴图，取第一个组
+            const initialRegion = sanitizeName(activeGroups[0].animationName);
+
+            const spineJson = {
+                "skeleton": {
+                    "hash": "skeletal_generated",
+                    "spine": state.spineVersion,
+                    "x": -maxW / 2,
+                    "y": -maxH / 2,
+                    "width": maxW,
+                    "height": maxH,
+                    "images": "./images/",
+                    "audio": ""
+                },
+                "bones": [
+                    { "name": "root" },
+                    { "name": "icon_bone", "parent": "root" }
+                ],
+                "slots": [
+                    { "name": "icon_slot", "bone": "icon_bone", "attachment": initialRegion }
+                ],
+                "skins": [
+                    {
+                        "name": "default",
+                        "attachments": {
+                            "icon_slot": skinsAttachments
+                        }
+                    }
+                ],
+                "animations": {}
+            };
+
+            // 注册 Spine 全局事件
+            const eventsDefinition = {};
+            let hasGlobalEvents = false;
+            activeGroups.forEach(g => {
+                g.events.forEach(ev => {
+                    if (ev.name.trim()) {
+                        eventsDefinition[ev.name.trim()] = {
+                            "int": 0,
+                            "float": 0.0,
+                            "string": ""
+                        };
+                        hasGlobalEvents = true;
+                    }
+                });
+            });
+            if (hasGlobalEvents) {
+                spineJson.events = eventsDefinition;
+            }
+
+            // 编译数学轨迹关键帧
+            activeGroups.forEach(g => {
+                const regionName = sanitizeName(g.animationName);
+                const template = g.skeletalTemplate;
+                const fps = parseFloat(g.frameRate) || 30;
+
+                const animEntry = {
+                    "slots": {
+                        "icon_slot": {
+                            "attachment": [
+                                { "time": 0, "name": regionName }
+                            ]
+                        }
+                    },
+                    "bones": {
+                        "icon_bone": {}
+                    }
+                };
+
+                if (template === 'idle') {
+                    animEntry.bones.icon_bone = {
+                        "scale": [
+                            { "time": 0, "x": 1, "y": 1 },
+                            { "time": 0.4, "x": 1.04, "y": 0.96 },
+                            { "time": 0.8, "x": 1, "y": 1 }
+                        ],
+                        "translate": [
+                            { "time": 0, "x": 0, "y": 0 },
+                            { "time": 0.4, "x": 0, "y": 5 },
+                            { "time": 0.8, "x": 0, "y": 0 }
+                        ]
+                    };
+                } else if (template === 'in') {
+                    animEntry.bones.icon_bone = {
+                        "scale": [
+                            { "time": 0, "x": 0, "y": 0 },
+                            { "time": 0.2, "x": 1.15, "y": 1.15 },
+                            { "time": 0.35, "x": 0.95, "y": 0.95 },
+                            { "time": 0.5, "x": 1, "y": 1 }
+                        ]
+                    };
+                    animEntry.slots.icon_slot.color = [
+                        { "time": 0, "color": "ffffff00" },
+                        { "time": 0.15, "color": "ffffffff" }
+                    ];
+                } else if (template === 'loop') {
+                    animEntry.bones.icon_bone = {
+                        "rotate": [
+                            { "time": 0, "angle": 0 },
+                            { "time": 0.4, "angle": 120 },
+                            { "time": 0.8, "angle": 240 },
+                            { "time": 1.2, "angle": 360 }
+                        ],
+                        "scale": [
+                            { "time": 0, "x": 1, "y": 1 },
+                            { "time": 0.6, "x": 1.06, "y": 1.06 },
+                            { "time": 1.2, "x": 1, "y": 1 }
+                        ]
+                    };
+                } else if (template === 'win') {
+                    animEntry.bones.icon_bone = {
+                        "scale": [
+                            { "time": 0, "x": 1, "y": 1 },
+                            { "time": 0.1, "x": 1.3, "y": 0.7 },
+                            { "time": 0.25, "x": 0.75, "y": 1.35 },
+                            { "time": 0.4, "x": 1.15, "y": 0.9 },
+                            { "time": 0.6, "x": 1, "y": 1 }
+                        ],
+                        "rotate": [
+                            { "time": 0, "angle": 0 },
+                            { "time": 0.15, "angle": -15 },
+                            { "time": 0.3, "angle": 15 },
+                            { "time": 0.45, "angle": -5 },
+                            { "time": 0.6, "angle": 0 }
+                        ]
+                    };
+                    animEntry.slots.icon_slot.color = [
+                        { "time": 0, "color": "ffffffff" },
+                        { "time": 0.15, "color": "ffd700ff" },
+                        { "time": 0.3, "color": "ffffffff" },
+                        { "time": 0.45, "color": "ffd700ff" },
+                        { "time": 0.6, "color": "ffffffff" }
+                    ];
+                } else if (template === 'gray') {
+                    animEntry.bones.icon_bone = {
+                        "scale": [
+                            { "time": 0, "x": 1, "y": 1 },
+                            { "time": 0.8, "x": 1.01, "y": 0.99 },
+                            { "time": 1.6, "x": 1, "y": 1 }
+                        ]
+                    };
+                    animEntry.slots.icon_slot.color = [
+                        { "time": 0, "color": "666666ff" }
+                    ];
+                } else if (template === 'out') {
+                    animEntry.bones.icon_bone = {
+                        "scale": [
+                            { "time": 0, "x": 1, "y": 1 },
+                            { "time": 0.4, "x": 0, "y": 0 }
+                        ],
+                        "rotate": [
+                            { "time": 0, "angle": 0 },
+                            { "time": 0.4, "angle": -180 }
+                        ]
+                    };
+                    animEntry.slots.icon_slot.color = [
+                        { "time": 0, "color": "ffffffff" },
+                        { "time": 0.4, "color": "ffffff00" }
+                    ];
+                }
+
+                // 关联当前骨骼动画组上的自定义 Spine 事件
+                const animEventsTimeline = [];
+                g.events.forEach(ev => {
+                    if (!ev.name.trim()) return;
+                    const frameIdx = parseInt(ev.frame) - 1;
+                    const time = Math.max(0, frameIdx) / fps;
+
+                    animEventsTimeline.push({
+                        "time": parseFloat(time.toFixed(4)),
+                        "name": ev.name.trim(),
+                        "int": parseInt(ev.intVal) || 0,
+                        "float": parseFloat(ev.floatVal) || 0.0,
+                        "string": ev.stringVal || ""
+                    });
+                });
+
+                if (animEventsTimeline.length > 0) {
+                    animEventsTimeline.sort((a, b) => a.time - b.time);
+                    animEntry.events = animEventsTimeline;
+                }
+
+                spineJson.animations[g.animationName] = animEntry;
+            });
+
+            // 导出打包
+            const zip = new JSZip();
+            zip.file(`${state.outputFileName}.json`, JSON.stringify(spineJson, null, 2));
+            zip.file(`${state.outputFileName}.atlas`, atlasText);
+
+            atlasCanvas.toBlob(blob => {
+                zip.file(`${state.outputFileName}.png`, blob);
+                
+                zip.generateAsync({ type: "blob" }).then(content => {
+                    saveAs(content, `${state.outputFileName}_spine_skeletal_package.zip`);
+                    showToast("骨骼动画打包完成！已自动开始下载。");
+                });
+            }, 'image/png');
+        }
+
+        // --- 2. 编译并打包为：传统序列帧模式 ---
+        async function buildAndDownloadSequenceSpine() {
+            showToast("正在编译打包序列帧 Spine 资源...", "info");
+
+            const activeGroups = state.groups.filter(g => g.files.length > 0);
+            if (activeGroups.length === 0) {
+                showToast("无可用帧，无法生成", "error");
+                return;
+            }
+
+            let maxW = 0;
+            let maxH = 0;
+            const allFileEntries = [];
+            
+            activeGroups.forEach(g => {
+                g.files.forEach(f => {
+                    if (f.img.width > maxW) maxW = f.img.width;
+                    if (f.img.height > maxH) maxH = f.img.height;
+                    allFileEntries.push(f);
+                });
+            });
+
+            const totalImages = allFileEntries.length;
+            const cols = Math.min(totalImages, 10);
+            const rows = Math.ceil(totalImages / cols);
+
+            const atlasCanvas = document.createElement('canvas');
+            atlasCanvas.width = cols * maxW;
+            atlasCanvas.height = rows * maxH;
+            const ctx = atlasCanvas.getContext('2d');
+
+            const packedInfo = [];
+            allFileEntries.forEach((f, idx) => {
+                const c = idx % cols;
+                const r = Math.floor(idx / cols);
+                const x = c * maxW;
+                const y = r * maxH;
+
+                ctx.drawImage(f.img, x, y);
+
+                packedInfo.push({
+                    name: f.regionName,
+                    x,
+                    y,
+                    width: f.img.width,
+                    height: f.img.height
+                });
+            });
+
+            let atlasText = "";
+            atlasText += `${state.outputFileName}.png\n`;
+            atlasText += `size: ${atlasCanvas.width},${atlasCanvas.height}\n`;
+            atlasText += `format: RGBA8888\n`;
+            atlasText += `filter: Linear,Linear\n`;
+            atlasText += `repeat: none\n`;
+
+            packedInfo.forEach(r => {
+                atlasText += `${r.name}\n`; 
+                atlasText += `  rotate: false\n`;
+                atlasText += `  xy: ${r.x}, ${r.y}\n`;
+                atlasText += `  size: ${r.width}, ${r.height}\n`;
+                atlasText += `  orig: ${r.width}, ${r.height}\n`;
+                atlasText += `  offset: 0, 0\n`;
+                atlasText += `  index: -1\n`;
+            });
+
+            const initialW = packedInfo[0].width;
+            const initialH = packedInfo[0].height;
+            const xMin = -initialW / 2;
+            const yMin = -initialH / 2;
+
+            const spineJson = {
+                "skeleton": {
+                    "hash": "auto_generated",
+                    "spine": state.spineVersion,
+                    "x": xMin,
+                    "y": yMin,
+                    "width": initialW,
+                    "height": initialH,
+                    "images": "./images/",
+                    "audio": ""
+                },
+                "bones": [
+                    { "name": "root" }
+                ],
+                "slots": [
+                    { "name": "sprite", "bone": "root", "attachment": packedInfo[0].name }
+                ],
+                "skins": [
+                    {
+                        "name": "default",
+                        "attachments": {
+                            "sprite": {}
+                        }
+                    }
+                ],
+                "animations": {}
+            };
+
+            const skinsAttachments = spineJson.skins[0].attachments["sprite"];
+            packedInfo.forEach(r => {
+                skinsAttachments[r.name] = {
+                    "x": 0,
+                    "y": 0,
+                    "width": r.width,
+                    "height": r.height
+                };
+            });
+
+            const eventsDefinition = {};
+            let hasGlobalEvents = false;
+            activeGroups.forEach(g => {
+                g.events.forEach(ev => {
+                    if (ev.name.trim()) {
+                        eventsDefinition[ev.name.trim()] = {
+                            "int": 0,
+                            "float": 0,
+                            "string": ""
+                        };
+                        hasGlobalEvents = true;
+                    }
+                });
+            });
+            if (hasGlobalEvents) {
+                spineJson.events = eventsDefinition;
+            }
+
+            activeGroups.forEach(g => {
+                const animKeys = [];
+                const fps = parseFloat(g.frameRate) || 15;
+
+                g.files.forEach((fileObj, idx) => {
+                    const time = idx / fps;
+                    animKeys.push({
+                        "time": parseFloat(time.toFixed(4)),
+                        "name": fileObj.regionName
+                    });
+                });
+
+                const animationEntry = {
+                    "slots": {
+                        "sprite": {
+                            "attachment": animKeys
+                        }
+                    }
+                };
+
+                const animEventsTimeline = [];
+                g.events.forEach(ev => {
+                    if (!ev.name.trim()) return;
+                    const frameIdx = parseInt(ev.frame) - 1;
+                    const time = Math.max(0, frameIdx) / fps;
+
+                    animEventsTimeline.push({
+                        "time": parseFloat(time.toFixed(4)),
+                        "name": ev.name.trim(),
+                        "int": parseInt(ev.intVal) || 0,
+                        "float": parseFloat(ev.floatVal) || 0.0,
+                        "string": ev.stringVal || ""
+                    });
+                });
+
+                if (animEventsTimeline.length > 0) {
+                    animEventsTimeline.sort((a, b) => a.time - b.time);
+                    animationEntry.events = animEventsTimeline;
+                }
+
+                spineJson.animations[g.animationName] = animationEntry;
+            });
+
+            const zip = new JSZip();
+            zip.file(`${state.outputFileName}.json`, JSON.stringify(spineJson, null, 2));
+            zip.file(`${state.outputFileName}.atlas`, atlasText);
+
+            atlasCanvas.toBlob(blob => {
+                zip.file(`${state.outputFileName}.png`, blob);
+                
+                zip.generateAsync({ type: "blob" }).then(content => {
+                    saveAs(content, `${state.outputFileName}_spine_package.zip`);
+                    showToast("序列帧打包完成！已自动开始下载。");
+                });
+            }, 'image/png');
+        }
+
+        // --- 绘制 Slots 默认精美图标图源 ---
+        function drawDefaultSymbol(ctx, size) {
+            ctx.clearRect(0, 0, size, size);
+            const cx = size / 2;
+            const cy = size / 2;
+            
+            // 1. 发光底板
+            const gradP = ctx.createRadialGradient(cx, cy, 10, cx, cy, 55);
+            gradP.addColorStop(0, '#4a00e0');
+            gradP.addColorStop(1, '#8e2de2');
+            ctx.fillStyle = gradP;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 50, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#ffd700';
+            ctx.stroke();
+
+            // 2. 扫光层
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, 48, 0, Math.PI * 2);
+            ctx.clip();
+            const sweepGrad = ctx.createLinearGradient(cx - 50, cy - 50, cx + 50, cy + 50);
+            sweepGrad.addColorStop(0, 'rgba(255,255,255,0)');
+            sweepGrad.addColorStop(0.5, 'rgba(255,255,255,0.25)');
+            sweepGrad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = sweepGrad;
+            ctx.fillRect(cx - 60, cy - 60, 120, 120);
+            ctx.restore();
+
+            // 3. 7号标志主体
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.beginPath();
+            ctx.moveTo(-20, -30);
+            ctx.lineTo(20, -30);
+            ctx.lineTo(5, 25);
+            ctx.lineTo(-5, 25);
+            ctx.lineTo(8, -18);
+            ctx.lineTo(-20, -18);
+            ctx.closePath();
+            const gradS = ctx.createLinearGradient(0, -30, 0, 25);
+            gradS.addColorStop(0, '#ff416c');
+            gradS.addColorStop(1, '#ff4b2b');
+            ctx.fillStyle = gradS;
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // 顶戴星芒皇冠
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.moveTo(-6, -34);
+            ctx.lineTo(-12, -42);
+            ctx.lineTo(-3, -39);
+            ctx.lineTo(0, -48);
+            ctx.lineTo(3, -39);
+            ctx.lineTo(12, -42);
+            ctx.lineTo(6, -34);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // --- 加载通用单张本地图片 ---
+        function loadImageFromFile(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // --- 核心：自动加载内置 Slots 示例系统 (自适应工作模式) ---
+        async function buildPresetSlotsAnimations() {
+            showToast("正在生成内置 slots 示例，请稍候...", "info");
+            state.groups.forEach(g => stopAnimLoop(g.id));
+            state.groups = [];
+            document.getElementById('animationGroups').innerHTML = '';
+            
+            const presets = [
+                { name: "in", template: "in", count: 12, fps: 24, events: [{ frame: 10, name: "land_sound", intVal: 0, floatVal: 0.0, stringVal: "heavy_drop" }] },
+                { name: "idle", template: "idle", count: 16, fps: 15, events: [] },
+                { name: "loop", template: "loop", count: 16, fps: 20, events: [] },
+                { name: "win", template: "win", count: 20, fps: 24, events: [{ frame: 1, name: "win_sound", intVal: 777, floatVal: 1.5, stringVal: "coins_cascade" }] },
+                { name: "gray", template: "gray", count: 8, fps: 12, events: [] },
+                { name: "out", template: "out", count: 10, fps: 20, events: [] }
+            ];
+
+            const size = 150; 
+            
+            // 实时在 Canvas 上拼出一张 Slots 经典 7 号图案作为单贴图源
+            const canvasS = document.createElement('canvas');
+            canvasS.width = size;
+            canvasS.height = size;
+            const ctxS = canvasS.getContext('2d');
+            drawDefaultSymbol(ctxS, size);
+            
+            const defaultBlob = await new Promise(res => canvasS.toBlob(res, 'image/png'));
+            const defaultFile = new File([defaultBlob], "symbol_7.png", { type: "image/png" });
+            const defaultImg = new Image();
+            defaultImg.src = canvasS.toDataURL();
+            await new Promise(res => defaultImg.onload = res);
+
+            for (const preset of presets) {
+                const groupObj = {
+                    id: `group-preset-${preset.name}-${Date.now()}`,
+                    animationName: preset.name,
+                    frameRate: preset.fps,
+                    mode: "multiple",
+                    skeletalTemplate: preset.template,
+                    files: [],
+                    singleImage: null,
+                    sliceRows: 1,
+                    sliceCols: 1,
+                    events: preset.events
+                };
+                
+                if (state.currentMode === 'skeletal') {
+                    // 骨骼动画模式下：仅向组中添加单张静态符号图片
+                    groupObj.files.push({
+                        file: defaultFile,
+                        img: defaultImg,
+                        name: "symbol_7.png",
+                        regionName: sanitizeName(preset.name)
+                    });
+                } else {
+                    // 序列帧模式下：根据数学轨迹，将动画烘焙成多张序列帧图片写入组
+                    for (let f = 0; f < preset.count; f++) {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = size;
+                        canvas.height = size;
+                        const ctx = canvas.getContext('2d');
+                        
+                        const { symbol } = getSkeletalTransform(preset.template, f / preset.count);
+                        const cx = size / 2;
+                        const cy = size / 2;
+                        
+                        ctx.save();
+                        ctx.translate(cx + symbol.x, cy + symbol.y);
+                        ctx.scale(symbol.scaleX, symbol.scaleY);
+                        ctx.rotate(symbol.rotate * Math.PI / 180);
+                        ctx.globalAlpha = symbol.alpha;
+                        drawTintedImage(ctx, defaultImg, -75, -75, 150, 150, symbol.tint);
+                        ctx.restore();
+
+                        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                        const filename = `${preset.name}_${String(f).padStart(3, '0')}.png`;
+                        const file = new File([blob], filename, { type: 'image/png' });
+                        
+                        const img = new Image();
+                        img.src = canvas.toDataURL();
+                        await new Promise(resolve => img.onload = resolve);
+                        
+                        groupObj.files.push({
+                            file,
+                            img,
+                            name: filename,
+                            regionName: `${preset.name}_${String(f).padStart(3, '0')}`
+                        });
+                    }
+                }
+                
+                state.groups.push(groupObj);
+                renderGroupCard(groupObj);
+                updateEventsUI(groupObj);
+                updateGroupFilesUI(groupObj);
+            }
+            
+            updateGroupLabels();
+            updateGenerateButtonState();
+            showToast("内置 Slots 动画组全部载入完毕！");
+        }
+
+        // --- CSV 表格批量导入动画组 ---
+        function parseAndImportCsv(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+                if (lines.length < 2) {
+                    showToast("CSV 文件至少需要标题行和一行数据", "error");
+                    return;
+                }
+
+                const headers = parseCsvLine(lines[0]).map(h => h.trim().toLowerCase());
+                const requiredCols = ['animationname'];
+                const missing = requiredCols.filter(c => !headers.includes(c));
+                if (missing.length > 0) {
+                    showToast(`CSV 缺少必要列: ${missing.join(', ')}`, "error");
+                    return;
+                }
+
+                const emptyGroups = [];
+                for (let gi = 0; gi < state.groups.length; gi++) {
+                    if (state.groups[gi].files.length === 0) emptyGroups.push(state.groups[gi]);
+                }
+                let emptyIdx = 0;
+
+                let imported = 0;
+                for (let i = 1; i < lines.length; i++) {
+                    const cells = parseCsvLine(lines[i]);
+                    const row = {};
+                    headers.forEach((h, idx) => { row[h] = (cells[idx] || '').trim(); });
+
+                    if (!row.animationname) continue;
+
+                    const events = [];
+                    if (row.events) {
+                        row.events.split(';').forEach(evStr => {
+                            const parts = evStr.split(':');
+                            if (parts.length >= 2 && parts[0].trim()) {
+                                events.push({
+                                    frame: parseInt(parts[0]) || 1,
+                                    name: parts[1].trim() || 'event',
+                                    intVal: parseInt(parts[2]) || 0,
+                                    floatVal: parseFloat(parts[3]) || 0.0,
+                                    stringVal: (parts[4] || '').trim()
+                                });
+                            }
+                        });
+                    }
+
+                    const groupData = {
+                        animationName: row.animationname,
+                        frameRate: parseInt(row.framerate) || 15,
+                        mode: (row.mode === 'single') ? 'single' : 'multiple',
+                        skeletalTemplate: row.skeletaltemplate || 'idle',
+                        files: [],
+                        singleImage: null,
+                        sliceRows: parseInt(row.slicerows) || 1,
+                        sliceCols: parseInt(row.slicecols) || 1,
+                        events
+                    };
+
+                    if (emptyIdx < emptyGroups.length) {
+                        const g = emptyGroups[emptyIdx++];
+                        Object.assign(g, groupData, { id: g.id });
+                        document.getElementById(g.id).remove();
+                        renderGroupCard(g);
+                    } else {
+                        const g = { id: `group-csv-${Date.now()}-${i}`, ...groupData };
+                        state.groups.push(g);
+                        renderGroupCard(g);
+                    }
+                    imported++;
+                }
+
+                updateGroupLabels();
+                updateGenerateButtonState();
+                showToast(`成功批量创建 ${imported} 个动画组！`);
+            };
+            reader.readAsText(fil
